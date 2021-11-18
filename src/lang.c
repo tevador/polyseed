@@ -98,8 +98,14 @@ static int compare_str_wrap(const void* a, const void* b) {
 }
 
 static int compare_prefix(const char* key, const char* elm, int n) {
-    for (int i = 1; i < n; ++i) {
-        if (*key == '\0' || *key != *elm) {
+    for (int i = 1; ; ++i) {
+        if (*key == '\0') {
+            break;
+        }
+        if (i >= n && key[1] == '\0') {
+            break;
+        }
+        if (*key != *elm) {
             break;
         }
         ++key;
@@ -138,14 +144,20 @@ static int compare_str_noaccent_wrap(const void* a, const void* b) {
 }
 
 static int compare_prefix_noaccent(const char* key, const char* elm, int n) {
-    for (int i = 1; i < n; ++i) {
+    for (int i = 1; ; ++i) {
         while (*key < 0) { /* skip non-ASCII */
             ++key;
         }
         while (*elm < 0) { /* skip non-ASCII */
             ++elm;
         }
-        if (*key == '\0' || *key != *elm) {
+        if (*key == '\0') {
+            break;
+        }
+        if (i >= n && key[1] == '\0') {
+            break;
+        }
+        if (*key != *elm) {
             break;
         }
         ++key;

@@ -181,6 +181,12 @@ polyseed_status polyseed_decode(const char* str,
         }
         word = pos;
         ++w;
+        if (w == POLYSEED_NUM_WORDS) {
+            if (*pos != '\0') {
+                ++w; /* too many words */
+            }
+            break;
+        }
     }
 
     if (w != POLYSEED_NUM_WORDS) {

@@ -22,8 +22,8 @@
 
 void polyseed_create(polyseed_data* data_out) {
     assert(data_out != NULL);
-    check_dependency();
-    data_out->birthday = birthday_encode(time(NULL));
+    CHECK_DEPS();
+    data_out->birthday = birthday_encode(GET_TIME());
     data_out->reserved = 0;
     GET_RANDOM_BYTES(data_out->secret, POLYSEED_SECRET_SIZE);
     unsigned rem_bits = SECRET_BITS;
@@ -82,7 +82,7 @@ void polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
     assert(data != NULL);
     assert(lang != NULL);
     assert(str_out != NULL);
-    check_dependency();
+    CHECK_DEPS();
 
     polyseed_phrase words;
 
@@ -154,7 +154,7 @@ polyseed_status polyseed_decode(const char* str,
     assert(str != NULL);
     assert((gf_elem)coin < GF_SIZE);
     assert(data_out != NULL);
-    check_dependency();
+    CHECK_DEPS();
 
     polyseed_str str_tmp;
 
@@ -206,7 +206,7 @@ void polyseed_keygen(const polyseed_data* data, polyseed_coin coin,
     assert(data != NULL);
     assert((gf_elem)coin < GF_SIZE);
     assert(key_out != NULL);
-    check_dependency();
+    CHECK_DEPS();
 
     uint8_t salt[32] = "POLYSEED v1";
     store32(&salt[12], coin);           /* domain separate by coin */

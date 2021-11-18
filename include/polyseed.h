@@ -27,6 +27,8 @@ typedef void polyseed_pbkdf2(const uint8_t* pw, size_t pwlen,
 
 typedef void polyseed_transform(const char* str, polyseed_str norm);
 
+typedef time_t polyseed_time(time_t* t);
+
 typedef struct polyseed_dependency {
     /* Function to generate cryptographically secure random bytes */
     polyseed_randbytes* rand;
@@ -36,6 +38,8 @@ typedef struct polyseed_dependency {
     polyseed_transform* u8_nfc;
     /* Function to convert a UTF8 string to a decomposed canonical form. */
     polyseed_transform* u8_nfkd;
+    /* Function to get the current time */
+    polyseed_time* time;
 } polyseed_dependency;
 
 /* Seed data structure for serialization */

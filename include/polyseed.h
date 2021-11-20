@@ -10,24 +10,26 @@
 /* Number of words in the mnemonic phrase */
 #define POLYSEED_NUM_WORDS 16
 
-/* The size of the secret seed buffer */
-#define POLYSEED_SECRET_SIZE 32
+/* The size of the serialized seed */
+#define POLYSEED_SIZE 32
 
-/* The maximum possible length of a decomposed phrase */
+/* The serialized seed. The contents are platform-independent. */
+typedef uint8_t polyseed_storage[POLYSEED_SIZE];
+
+/* The maximum possible length of a mnemonic phrase */
 #define POLYSEED_STR_SIZE 360
 
+/* Mnemonic phrase buffer */
 typedef char polyseed_str[POLYSEED_STR_SIZE];
 
 /* Dependency injection definitions */
 typedef void polyseed_randbytes(void* result, size_t n);
-
 typedef void polyseed_pbkdf2(const uint8_t* pw, size_t pwlen,
     const uint8_t* salt, size_t saltlen, uint64_t iterations,
     uint8_t* key, size_t keylen);
-
 typedef void polyseed_transform(const char* str, polyseed_str norm);
-
 typedef time_t polyseed_time(time_t* t);
+typedef void polyseed_memzero(void* const ptr, const size_t len);
 
 typedef struct polyseed_dependency {
     /* Function to generate cryptographically secure random bytes */
@@ -40,15 +42,9 @@ typedef struct polyseed_dependency {
     polyseed_transform* u8_nfkd;
     /* Function to get the current time */
     polyseed_time* time;
+    /* Function to securely erase memory */
+    polyseed_memzero* memzero;
 } polyseed_dependency;
-
-/* Seed data structure for serialization */
-typedef struct polyseed_data {
-    unsigned birthday;
-    unsigned reserved;
-    /* padded with zeroes for future compatibility with longer seeds */
-    uint8_t secret[POLYSEED_SECRET_SIZE];
-} polyseed_data;
 
 /* List of coins. The seeds for different coins are incompatible. */
 typedef enum polyseed_coin {
@@ -67,9 +63,16 @@ typedef enum polyseed_status {
     POLYSEED_ERR_LANG = 2,
     /* Checksum mistmach */
     POLYSEED_ERR_CHECKSUM = 3,
-    /* Reserved bits are not zero */
-    POLYSEED_ERR_RESERVED = 4,
+    /* Unsupported seed features */
+    POLYSEED_ERR_UNSUPPORTED = 4,
+    /* Invalid seed format */
+    POLYSEED_ERR_FORMAT = 5,
+    /* Memory allocation failure */
+    POLYSEED_ERR_MEMORY = 6,
 } polyseed_status;
+
+/* Opaque struct with the seed data */
+typedef struct polyseed_data polyseed_data;
 
 /* Opaque struct with language data */
 typedef struct polyseed_lang polyseed_lang;
@@ -78,8 +81,8 @@ typedef struct polyseed_lang polyseed_lang;
 Shared/static library definitions 
     - define POLYSEED_SHARED when building a shared library
     - define POLYSEED_STATIC when building a static library
+    - define POLYSEED_STATIC when linking to the static library
 */
-
 #if defined(_WIN32) || defined(__CYGWIN__)
     #ifdef POLYSEED_SHARED
         #define POLYSEED_API __declspec(dllexport)
@@ -103,23 +106,24 @@ extern "C" {
 #endif
 
 /**
- * Inject the dependencies of polyseed. Must be called before using the other
+ * Injects the dependencies of polyseed. Must be called before using the other
  * API functions.
  *
- * @param deps is a pointer to the structure with dependencies.
+ * @param deps is a pointer to the structure with dependencies. May point to
+ *        a temporary variable (the struct gets copied internally).
  *        Must not be NULL.
 */
-POLYSEED_API void polyseed_inject(const polyseed_dependency* deps);
+POLYSEED_API
+void polyseed_inject(const polyseed_dependency* deps);
 
 /**
- * Get the number of supported languages.
- *
  * @return the number of supported languages.
  */
-POLYSEED_API int polyseed_get_num_langs(void);
+POLYSEED_API
+int polyseed_get_num_langs(void);
 
 /**
- * Get a language by its index.
+ * Returns a language by its index.
  *
  * @param i is the language index. Valid values are from zero to one less than
  *        the number of supported languages.
@@ -128,84 +132,124 @@ POLYSEED_API int polyseed_get_num_langs(void);
  *
  * @return opaque pointer to the language structure.
  */
-POLYSEED_API const polyseed_lang* polyseed_get_lang(int i);
+POLYSEED_API
+const polyseed_lang* polyseed_get_lang(int i);
 
 /**
- * Get the native name of a language.
+ * Returns the native name of a language.
  *
  * @param lang is the pointer to a language structure. Must not be NULL.
  *
  * @return the native name of the language in UTF8.
  */
-POLYSEED_API const char* polyseed_get_lang_name(const polyseed_lang* lang);
+POLYSEED_API
+const char* polyseed_get_lang_name(const polyseed_lang* lang);
 
 /**
- * Get the English name of a language.
+ * Returns the English name of a language.
  *
  * @param lang is the pointer to a language structure. Must not be NULL.
  *
  * @return the English name of the language.
  */
-POLYSEED_API const char* polyseed_get_lang_name_en(const polyseed_lang* lang);
+POLYSEED_API
+const char* polyseed_get_lang_name_en(const polyseed_lang* lang);
 
 /**
- * Create a seed.
+ * Creates a new seed.
  *
- * @param data_out is a pointer to the structure where the seed data will be stored.
- *        Must not be NULL.
+ * @return an opaque pointer to the seed data or NULL if memory allocation
+ *         failed.
 */
-POLYSEED_API void polyseed_create(polyseed_data* data_out);
+POLYSEED_API
+polyseed_data* polyseed_create(void);
 
 /**
- * Get the approximate time when the seed was created.
+ * Securely erases the seed data and releases the allocated memory.
  *
- * @param lang is the pointer to the seed data. Must not be NULL.
+ * @param seed is the pointer to be freed. If NULL, no action is performed.
+*/
+POLYSEED_API
+void polyseed_free(polyseed_data* seed);
+
+/**
+ * Gets the approximate time when the seed was created.
+ *
+ * @param seed is the pointer to the seed data. Must not be NULL.
  *
  * @return time_t structure with the approximate time when the seed was created.
  */
-POLYSEED_API time_t polyseed_get_birthday(const polyseed_data* data);
+POLYSEED_API
+time_t polyseed_get_birthday(const polyseed_data* seed);
 
 /**
  * Derives a secret key from the mnemonic seed.
  *
- * @param data is a pointer to the seed data. Must not be NULL.
+ * @param seed is a pointer to the seed data. Must not be NULL.
  * @param coin is the coin the secret key is intended for.
  * $param key_size is the required key size.
  * @param key_out is the buffer where the secret key will be stored.
  *        Must not be NULL.
 */
-POLYSEED_API void polyseed_keygen(const polyseed_data* data,
-    polyseed_coin coin, size_t key_size, uint8_t* key_out);
+POLYSEED_API
+void polyseed_keygen(const polyseed_data* seed, polyseed_coin coin,
+    size_t key_size, uint8_t* key_out);
 
 /**
  * Encodes the mnemonic seed into a string.
  *
- * @param data is a pointer to the seed data. Must not be NULL.
+ * @param seed is a pointer to the seed data. Must not be NULL.
  * @param lang is a pointer to the language to encode the seed.
  *        Must not be NULL.
  * @param coin is the coin the mnemonic phrase is intended for.
  * @param str_out is the buffer where the mnemonic phrase will be stored
  *        as a C-style string. Must not be NULL.
 */
-POLYSEED_API void polyseed_encode(const polyseed_data* data,
-    const polyseed_lang* lang, polyseed_coin coin, polyseed_str str_out);
+POLYSEED_API
+void polyseed_encode(const polyseed_data* seed, const polyseed_lang* lang,
+    polyseed_coin coin, polyseed_str str_out);
 
 /**
- * Decode the seed from a mnemonic phrase.
+ * Decodes the seed from a mnemonic phrase.
  *
  * @param str is the mnemonic phrase as a C-style string. Must not be NULL.
  * @param coin is the coin the mnemonic phrase is intended for.
  * @param lang_out is an optional pointer. IF not NULL, the detected language
  *        of the mnemonic phrase will be stored there.
- * @param data_out is a pointer to the structure where the seed data will be stored.
+ * @param seed_out is a pointer where the seed pointer will be stored.
  *        Must not be NULL.
  *
  * @return POLYSEED_OK if the operation was successful. Other values indicate
- *         an error (in that case, *lang_out and *data_out are undefined).
+ *         an error (in that case, *lang_out and *seed_out are undefined).
  */
-POLYSEED_API polyseed_status polyseed_decode(const char* str,
-    polyseed_coin coin, const polyseed_lang** lang_out,
-    polyseed_data* data_out);
+POLYSEED_API
+polyseed_status polyseed_decode(const char* str, polyseed_coin coin,
+    const polyseed_lang** lang_out, polyseed_data** seed_out);
+
+/**
+ * Serializes the seed data in a platform-independent way.
+ *
+ * @param seed is the pointer to the seed data. Must not be NULL.
+ * @param storage is the buffer where the seed will be stored.
+ *        Must not be NULL.
+*/
+POLYSEED_API
+void polyseed_store(const polyseed_data* seed, polyseed_storage storage);
+
+/**
+ * Loads a serialized seed.
+ *
+ * @param storage is the buffer with the serialized seed.
+ *        Must not be NULL.
+ * @param seed_out is a pointer where the seed pointer will be stored.
+ *        Must not be NULL.
+ *
+ * @return POLYSEED_OK if the operation was successful. Other values indicate
+ *         an error (in that case, *seed_out is undefined).
+ */
+POLYSEED_API
+polyseed_status polyseed_load(const polyseed_storage storage,
+    polyseed_data** seed_out);
 
 #ifdef __cplusplus
 }

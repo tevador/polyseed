@@ -7,6 +7,7 @@
 #include "gf.h"
 #include "gf_elem.h"
 
+#include <assert.h>
 #include <stdbool.h>
 
 static inline bool gf_poly_is_zero(const gf_poly* x) {
@@ -74,6 +75,7 @@ static void gf_poly_shift(gf_poly* x, int shift) {
 }
 
 static void gf_poly_mul(const gf_poly* x, const gf_poly* y, gf_poly* z) {
+    assert(x->degree + y->degree <= POLY_MAX_DEGREE);
     for (unsigned i = 0; i <= x->degree; ++i) {
         for (unsigned j = 0; j <= y->degree; ++j) {
             z->coeff[i + j] ^= gf_elem_mul(x->coeff[i], y->coeff[j]);

@@ -7,6 +7,7 @@
 #include "birthday.h"
 #include "lang.h"
 #include "gf.h"
+#include "storage.h"
 #include "rs_code.h"
 
 #include <time.h>
@@ -14,56 +15,45 @@
 #include <stdbool.h>
 #include <string.h>
 #include <limits.h>
+#include <stdlib.h>
 
-#define RESERVED_BITS 5
-#define SECRET_BITS 150
-#define TOTAL_BITS GF_BITS * POLYSEED_NUM_WORDS
 #define KDF_NUM_ITERATIONS 4096
 
-void polyseed_create(polyseed_data* data_out) {
-    assert(data_out != NULL);
-    CHECK_DEPS();
-    data_out->birthday = birthday_encode(GET_TIME());
-    data_out->reserved = 0;
-    GET_RANDOM_BYTES(data_out->secret, POLYSEED_SECRET_SIZE);
-    unsigned rem_bits = SECRET_BITS;
-    for (int i = 0; i < POLYSEED_SECRET_SIZE; ++i) {
-        unsigned mask_bits = rem_bits > (sizeof(uint8_t) * CHAR_BIT)
-            ? (sizeof(uint8_t) * CHAR_BIT)
-            : rem_bits;
-        uint8_t mask = (1u << mask_bits) - 1;
-        data_out->secret[i] &= mask;
-        rem_bits -= mask_bits;
-    }
-}
+static void data_to_poly(const polyseed_data* data, unsigned rem_bits,
+    gf_poly* poly) {
 
-time_t polyseed_get_birthday(const polyseed_data* data) {
-    assert(data != NULL);
-    return birthday_decode(data->birthday);
-}
-
-void polyseed_encode_internal(const polyseed_data* data, const polyseed_lang* lang,
-    polyseed_coin coin, polyseed_phrase words_out) {
-
-    gf_poly poly = { 0 };
-    unsigned rem_bits = GF_BITS;
-    polyseed_gf_write(&poly, &rem_bits, data->birthday, DATE_BITS);
-    polyseed_gf_write(&poly, &rem_bits, data->reserved, RESERVED_BITS);
+    polyseed_gf_write(poly, &rem_bits, data->birthday, DATE_BITS);
+    polyseed_gf_write(poly, &rem_bits, data->reserved, RESERVED_BITS);
     unsigned seed_rem_bits = SECRET_BITS;
     for (int i = 0; seed_rem_bits > 0; ++i) {
         unsigned chunk_bits = MIN((unsigned)CHAR_BIT, seed_rem_bits);
         seed_rem_bits -= chunk_bits;
-        polyseed_gf_write(&poly, &rem_bits, data->secret[i], chunk_bits);
+        polyseed_gf_write(poly, &rem_bits, data->secret[i], chunk_bits);
     }
     assert(rem_bits == 0);
+}
 
-    polyseed_rs_encode(&poly);
+static void poly_to_data(const gf_poly* poly, polyseed_data* data) {
+    data->birthday = 0;
+    data->reserved = 0;
+    memset(data->secret, 0, sizeof(data->secret));
+    data->checksum = poly->coeff[0];
 
-    poly.coeff[RS_NUM_CHECK_DIGITS] ^= coin;
+    unsigned used_bits = RS_NUM_CHECK_DIGITS * GF_BITS;
 
-    for (int i = 0; i < POLYSEED_NUM_WORDS; ++i) {
-        words_out[i] = lang->words[poly.coeff[i]];
+    polyseed_gf_read(poly, &used_bits, &data->birthday, DATE_BITS);
+    polyseed_gf_read(poly, &used_bits, &data->reserved, RESERVED_BITS);
+
+    unsigned seed_rem_bits = SECRET_BITS;
+    for (int i = 0; seed_rem_bits > 0; ++i) {
+        unsigned chunk_bits = MIN((unsigned)CHAR_BIT, seed_rem_bits);
+        seed_rem_bits -= chunk_bits;
+        unsigned chunk_data = data->secret[i];
+        polyseed_gf_read(poly, &used_bits, &chunk_data, chunk_bits);
+        data->secret[i] = chunk_data;
     }
+
+    assert(used_bits == TOTAL_BITS);
 }
 
 static void write_str(char** pos, const char* str) {
@@ -76,97 +66,9 @@ static void write_str(char** pos, const char* str) {
     *pos = loc;
 }
 
-void polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
-    polyseed_coin coin, polyseed_str str_out) {
-
-    assert(data != NULL);
-    assert(lang != NULL);
-    assert(str_out != NULL);
-    CHECK_DEPS();
-
-    polyseed_phrase words;
-
-    polyseed_encode_internal(data, lang, coin, words);
-
-    polyseed_str str_tmp;
-    char* pos = str_tmp;
-    int w;
-
-    for (w = 0; w < POLYSEED_NUM_WORDS - 1; ++w) {
-        write_str(&pos, words[w]);
-        write_str(&pos, lang->separator);
-    }
-    write_str(&pos, words[w]);
-    *pos = '\0';
-
-    if (lang->compose) {
-        UTF8_COMPOSE(str_tmp, str_out);
-    }
-    else {
-        strncpy(str_out, str_tmp, POLYSEED_STR_SIZE);
-    }
-}
-
-polyseed_status polyseed_decode_internal(const polyseed_phrase words,
-    polyseed_coin coin, const polyseed_lang** lang_out,
-    polyseed_data* data_out) {
-    
-    gf_poly poly = { 0 };
-    if (!polyseed_phrase_decode(words, poly.coeff, lang_out)) {
-        return POLYSEED_ERR_LANG;
-    }
-    poly.coeff[RS_NUM_CHECK_DIGITS] ^= coin;
-    poly.degree = POLY_MAX_DEGREE;
-    if (!polyseed_rs_check(&poly)) {
-        return POLYSEED_ERR_CHECKSUM;
-    }
-
-    unsigned used_bits = RS_NUM_CHECK_DIGITS * GF_BITS;
-    data_out->reserved = 0;
-    data_out->birthday = 0;
-    memset(data_out->secret, 0, POLYSEED_SECRET_SIZE);
-
-    polyseed_gf_read(&poly, &used_bits, &data_out->birthday, DATE_BITS);
-    polyseed_gf_read(&poly, &used_bits, &data_out->reserved, RESERVED_BITS);
-
-    unsigned seed_rem_bits = SECRET_BITS;
-    for (int i = 0; seed_rem_bits > 0; ++i) {
-        unsigned chunk_bits = MIN((unsigned)CHAR_BIT, seed_rem_bits);
-        seed_rem_bits -= chunk_bits;
-        unsigned chunk_data = data_out->secret[i];
-        polyseed_gf_read(&poly, &used_bits, &chunk_data, chunk_bits);
-        data_out->secret[i] = chunk_data;
-    }
-
-    assert(used_bits == TOTAL_BITS);
-
-    if (data_out->reserved != 0) {
-        return POLYSEED_ERR_RESERVED;
-    }
-
-    return POLYSEED_OK;
-}
-
-polyseed_status polyseed_decode(const char* str,
-    polyseed_coin coin, const polyseed_lang** lang_out,
-    polyseed_data* data_out) {
-
-    assert(str != NULL);
-    assert((gf_elem)coin < GF_SIZE);
-    assert(data_out != NULL);
-    CHECK_DEPS();
-
-    polyseed_str str_tmp;
-
-    /* canonical decomposition */
-    UTF8_DECOMPOSE(str, str_tmp);
-
-    str_tmp[POLYSEED_STR_SIZE - 1] = '\0';
-
-    polyseed_phrase words;
-
-    char* pos = str_tmp;
-    char* word = str_tmp;
+static int str_split(char* str, polyseed_phrase words) {
+    char* pos = str;
+    char* word = str;
     int w = 0;
 
     /* split on space */
@@ -188,12 +90,162 @@ polyseed_status polyseed_decode(const char* str,
             break;
         }
     }
+    return w;
+}
 
-    if (w != POLYSEED_NUM_WORDS) {
-        return POLYSEED_ERR_NUM_WORDS;
+polyseed_data* polyseed_create(void) {
+    CHECK_DEPS();
+
+    /* alocate memory */
+    polyseed_data* seed = malloc(sizeof(polyseed_data));
+    if (seed == NULL) {
+        return NULL;
     }
 
-    return polyseed_decode_internal(words, coin, lang_out, data_out);
+    /* create seed */
+    seed->birthday = birthday_encode(GET_TIME());
+    seed->reserved = RESERVED_VALUE;
+    memset(seed->secret, 0, sizeof(seed->secret));
+    GET_RANDOM_BYTES(seed->secret, SECRET_SIZE);
+    seed->secret[SECRET_SIZE - 1] &= CLEAR_MASK;
+
+    /* encode polynomial */
+    gf_poly poly = { 0 };
+    data_to_poly(seed, GF_BITS, &poly);
+
+    /* calculate checksum */
+    polyseed_rs_encode(&poly);
+    seed->checksum = poly.coeff[0];
+
+    MEMZERO_LOC(poly);
+    return seed;
+}
+
+void polyseed_free(polyseed_data* seed) {
+    if (seed != NULL) {
+        MEMZERO_PTR(seed, polyseed_data);
+        free(seed);
+    }
+}
+
+time_t polyseed_get_birthday(const polyseed_data* data) {
+    assert(data != NULL);
+    return birthday_decode(data->birthday);
+}
+
+void polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
+    polyseed_coin coin, polyseed_str str_out) {
+
+    assert(data != NULL);
+    assert(lang != NULL);
+    assert(str_out != NULL);
+    CHECK_DEPS();
+
+    /* encode polynomial with the existing checksum */
+    gf_poly poly = { 0 };
+    poly.coeff[0] = data->checksum;
+    data_to_poly(data, 0, &poly);
+
+    /* apply coin */
+    poly.coeff[RS_NUM_CHECK_DIGITS] ^= coin;
+
+    polyseed_str str_tmp;
+    char* pos = str_tmp;
+    int w;
+
+#define WORD(i) lang->words[poly.coeff[i]]
+
+    /* output words */
+    for (w = 0; w < POLYSEED_NUM_WORDS - 1; ++w) {
+        write_str(&pos, WORD(w));
+        write_str(&pos, lang->separator);
+    }
+    write_str(&pos, WORD(w));
+    *pos = '\0';
+
+#undef WORD
+
+    /* compose if needed by the language */
+    if (lang->compose) {
+        UTF8_COMPOSE(str_tmp, str_out);
+    }
+    else {
+        strncpy(str_out, str_tmp, POLYSEED_STR_SIZE);
+    }
+
+    MEMZERO_LOC(poly);
+    MEMZERO_LOC(str_tmp);
+}
+
+polyseed_status polyseed_decode(const char* str,
+    polyseed_coin coin, const polyseed_lang** lang_out,
+    polyseed_data** seed_out) {
+
+    assert(str != NULL);
+    assert((gf_elem)coin < GF_SIZE);
+    assert(seed_out != NULL);
+    CHECK_DEPS();
+
+    polyseed_str str_tmp;
+    polyseed_phrase words;
+    gf_poly poly = { 0 };
+    polyseed_status res;
+    polyseed_data* seed;
+
+    /* canonical decomposition */
+    UTF8_DECOMPOSE(str, str_tmp);
+
+    /* make sure the string is null-terminated */
+    str_tmp[POLYSEED_STR_SIZE - 1] = '\0';
+
+    /* split into words */
+    if (str_split(str_tmp, words) != POLYSEED_NUM_WORDS) {
+        res = POLYSEED_ERR_NUM_WORDS;
+        goto cleanup;
+    }
+
+    /* decode words into polynomial coefficients */
+    if (!polyseed_phrase_decode(words, poly.coeff, lang_out)) {
+        res = POLYSEED_ERR_LANG;
+        goto cleanup;
+    }
+
+    /* finalize polynomial */
+    poly.coeff[RS_NUM_CHECK_DIGITS] ^= coin;
+    poly.degree = POLY_MAX_DEGREE;
+
+    /* checksum */
+    if (!polyseed_rs_check(&poly)) {
+        res = POLYSEED_ERR_CHECKSUM;
+        goto cleanup;
+    }
+
+    /* alocate memory */
+    seed = malloc(sizeof(polyseed_data));
+
+    if (seed == NULL) {
+        res = POLYSEED_ERR_MEMORY;
+        goto cleanup;
+    }
+
+    /* decode polynomial into seed data */
+    poly_to_data(&poly, seed);
+
+    /* nonzero reserved bits indicate a future version of the seed */
+    if (seed->reserved != RESERVED_VALUE) {
+        polyseed_free(seed);
+        res = POLYSEED_ERR_UNSUPPORTED;
+        goto cleanup;
+    }
+
+    *seed_out = seed;
+    res = POLYSEED_OK;
+
+cleanup:
+    MEMZERO_LOC(str_tmp);
+    MEMZERO_LOC(words);
+    MEMZERO_LOC(poly);
+    return res;
 }
 
 static inline void store32(uint8_t* p, uint32_t u) {
@@ -206,19 +258,71 @@ static inline void store32(uint8_t* p, uint32_t u) {
     *p++ = (uint8_t)u;
 }
 
-void polyseed_keygen(const polyseed_data* data, polyseed_coin coin,
+void polyseed_keygen(const polyseed_data* seed, polyseed_coin coin,
     size_t key_size, uint8_t* key_out) {
 
-    assert(data != NULL);
+    assert(seed != NULL);
     assert((gf_elem)coin < GF_SIZE);
     assert(key_out != NULL);
     CHECK_DEPS();
 
-    uint8_t salt[32] = "POLYSEED v1";
+    uint8_t salt[32] = "POLYSEED";
+    salt[9] = 0xff;
+    salt[10] = 0xff;
+    salt[11] = 0xff;
     store32(&salt[12], coin);           /* domain separate by coin */
-    store32(&salt[16], data->birthday); /* domain separate by birthday */
-    store32(&salt[20], data->reserved); /* domain separate by reserved bits */
+    store32(&salt[16], seed->birthday); /* domain separate by birthday */
+    store32(&salt[20], seed->reserved); /* domain separate by reserved bits */
     
-    PBKDF2_SHA256(data->secret, POLYSEED_SECRET_SIZE, salt, sizeof(salt),
+    PBKDF2_SHA256(seed->secret, SECRET_BUFFER_SIZE, salt, sizeof(salt),
         KDF_NUM_ITERATIONS, key_out, key_size);
+}
+
+void polyseed_store(const polyseed_data* seed, polyseed_storage storage) {
+    assert(seed != NULL);
+    assert(storage != NULL);
+
+    polyseed_data_store(seed, storage);
+}
+
+polyseed_status polyseed_load(const polyseed_storage storage,
+    polyseed_data** seed_out) {
+
+    assert(storage != NULL);
+    assert(seed_out != NULL);
+
+    gf_poly poly = { 0 };
+    polyseed_status res;
+    polyseed_data* seed;
+
+    /* alocate memory */
+    seed = malloc(sizeof(polyseed_data));
+
+    if (seed == NULL) {
+        return POLYSEED_ERR_MEMORY;
+    }
+
+    /* deserialize data */
+    res = polyseed_data_load(storage, seed);
+    if (res != POLYSEED_OK) {
+        polyseed_free(seed);
+        return res;
+    }
+
+    /* encode polynomial with the existing checksum */
+    poly.coeff[0] = seed->checksum;
+    data_to_poly(seed, 0, &poly);
+
+    /* checksum */
+    if (!polyseed_rs_check(&poly)) {
+        res = POLYSEED_ERR_CHECKSUM;
+        polyseed_free(seed);
+    }
+    else {
+        res = POLYSEED_OK;
+        *seed_out = seed;
+    }
+
+    MEMZERO_LOC(poly);
+    return res;
 }

@@ -12,7 +12,7 @@
 extern polyseed_dependency polyseed_deps;
 
 #define CHECK_DEPS() do {\
-    assert(polyseed_deps.rand != NULL); \
+    assert(polyseed_deps.randbytes != NULL); \
     assert(polyseed_deps.pbkdf2_sha256 != NULL); \
     assert(polyseed_deps.u8_nfc != NULL); \
     assert(polyseed_deps.u8_nfkd != NULL); \
@@ -21,7 +21,7 @@ extern polyseed_dependency polyseed_deps;
     assert(polyseed_deps.alloc != NULL); \
     assert(polyseed_deps.free != NULL); } while(false)
 
-#define GET_RANDOM_BYTES(a, b) polyseed_deps.rand((a), (b))
+#define GET_RANDOM_BYTES(a, b) polyseed_deps.randbytes((a), (b))
 #define PBKDF2_SHA256(pw, pwlen, salt, saltlen, iter, key, keylen) \
     polyseed_deps.pbkdf2_sha256((pw), (pwlen), (salt), (saltlen), (iter), \
     (key), (keylen))

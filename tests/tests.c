@@ -268,7 +268,7 @@ static void check_key(polyseed_data* data, polyseed_coin coin) {
 
 static bool test_inject1(void) {
     const polyseed_dependency deps = {
-        .rand = &gen_rand_bytes1,
+        .randbytes = &gen_rand_bytes1,
         .pbkdf2_sha256 = &pbkdf2_dummy1,
         .u8_nfc = &u8_nfc_donothing,
         .u8_nfkd = &u8_nfkd_spaces,
@@ -475,7 +475,7 @@ static bool test_free_null(void) {
 
 static bool test_inject2(void) {
     const polyseed_dependency deps = {
-        .rand = &gen_rand_bytes2,
+        .randbytes = &gen_rand_bytes2,
         .pbkdf2_sha256 = &pbkdf2_dummy2,
         .u8_nfc = &u8_nfc_donothing,
         .u8_nfkd = &u8_nfkd_spaces,
@@ -596,7 +596,7 @@ static bool test_free2(void) {
 
 static bool test_inject3(void) {
     const polyseed_dependency dep = {
-        .rand = &gen_rand_bytes3,
+        .randbytes = &gen_rand_bytes3,
         .pbkdf2_sha256 = &pbkdf2_dummy3,
         .u8_nfc = &u8_nfc_donothing,
         .u8_nfkd = &u8_nfkd_spaces,
@@ -681,7 +681,7 @@ static bool test_memleak(void) {
 
 static bool test_inject4(void) {
     const polyseed_dependency dep = {
-        .rand = &gen_rand_bytes3,
+        .randbytes = &gen_rand_bytes3,
         .pbkdf2_sha256 = &pbkdf2_dummy3,
         .u8_nfc = &u8_nfc_donothing,
         .u8_nfkd = &u8_nfkd_spaces,

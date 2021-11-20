@@ -35,12 +35,12 @@ typedef void polyseed_mfree(void* ptr);
 
 typedef struct polyseed_dependency {
     /* Function to generate cryptographically secure random bytes */
-    polyseed_randbytes* rand;
+    polyseed_randbytes* randbytes;
     /* Function to calculate PBKDF2 based on HMAC-SHA256 */
     polyseed_pbkdf2* pbkdf2_sha256;
-    /* Function to convert a UTF8 string to a composed canonical form. */
+    /* Function to convert a UTF8 string to the composed canonical form. */
     polyseed_transform* u8_nfc;
-    /* Function to convert a UTF8 string to a decomposed canonical form. */
+    /* Function to convert a UTF8 string to the decomposed canonical form. */
     polyseed_transform* u8_nfkd;
     /* Function to securely erase memory */
     polyseed_memzero* memzero;

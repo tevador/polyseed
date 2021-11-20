@@ -30,6 +30,8 @@ typedef void polyseed_pbkdf2(const uint8_t* pw, size_t pwlen,
 typedef void polyseed_transform(const char* str, polyseed_str norm);
 typedef time_t polyseed_time(time_t* t);
 typedef void polyseed_memzero(void* const ptr, const size_t len);
+typedef void* polyseed_malloc(size_t n);
+typedef void polyseed_mfree(void* ptr);
 
 typedef struct polyseed_dependency {
     /* Function to generate cryptographically secure random bytes */
@@ -40,10 +42,14 @@ typedef struct polyseed_dependency {
     polyseed_transform* u8_nfc;
     /* Function to convert a UTF8 string to a decomposed canonical form. */
     polyseed_transform* u8_nfkd;
-    /* Function to get the current time */
-    polyseed_time* time;
     /* Function to securely erase memory */
     polyseed_memzero* memzero;
+    /* OPTIONAL: Function to get the current time */
+    polyseed_time* time;
+    /* OPTIONAL: Function to allocate memory */
+    polyseed_malloc* alloc;
+    /* OPTIONAL: Function to free memory */
+    polyseed_mfree* free;
 } polyseed_dependency;
 
 /* List of coins. The seeds for different coins are incompatible. */
@@ -166,6 +172,11 @@ polyseed_data* polyseed_create(void);
 
 /**
  * Securely erases the seed data and releases the allocated memory.
+ * This function should be called for pointers obtained from the following
+ * functions:
+ *  - polyseed_create
+ *  - polyseed_decode
+ *  - polyseed_load
  *
  * @param seed is the pointer to be freed. If NULL, no action is performed.
 */
@@ -173,11 +184,11 @@ POLYSEED_API
 void polyseed_free(polyseed_data* seed);
 
 /**
- * Gets the approximate time when the seed was created.
+ * Gets the approximate date when the seed was created.
  *
  * @param seed is the pointer to the seed data. Must not be NULL.
  *
- * @return time_t structure with the approximate time when the seed was created.
+ * @return time_t structure with the approximate date when the seed was created.
  */
 POLYSEED_API
 time_t polyseed_get_birthday(const polyseed_data* seed);

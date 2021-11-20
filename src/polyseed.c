@@ -15,7 +15,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include <limits.h>
-#include <stdlib.h>
 
 #define KDF_NUM_ITERATIONS 4096
 
@@ -97,7 +96,7 @@ polyseed_data* polyseed_create(void) {
     CHECK_DEPS();
 
     /* alocate memory */
-    polyseed_data* seed = malloc(sizeof(polyseed_data));
+    polyseed_data* seed = ALLOC(sizeof(polyseed_data));
     if (seed == NULL) {
         return NULL;
     }
@@ -124,7 +123,7 @@ polyseed_data* polyseed_create(void) {
 void polyseed_free(polyseed_data* seed) {
     if (seed != NULL) {
         MEMZERO_PTR(seed, polyseed_data);
-        free(seed);
+        FREE(seed);
     }
 }
 
@@ -221,7 +220,7 @@ polyseed_status polyseed_decode(const char* str,
     }
 
     /* alocate memory */
-    seed = malloc(sizeof(polyseed_data));
+    seed = ALLOC(sizeof(polyseed_data));
 
     if (seed == NULL) {
         res = POLYSEED_ERR_MEMORY;
@@ -296,7 +295,7 @@ polyseed_status polyseed_load(const polyseed_storage storage,
     polyseed_data* seed;
 
     /* alocate memory */
-    seed = malloc(sizeof(polyseed_data));
+    seed = ALLOC(sizeof(polyseed_data));
 
     if (seed == NULL) {
         return POLYSEED_ERR_MEMORY;

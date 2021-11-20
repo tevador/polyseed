@@ -14,6 +14,7 @@
 #include <string.h>
 #include <time.h>
 #include <limits.h>
+#include <stdlib.h>
 
 typedef bool test_func(void);
 typedef void multitest_func(void);
@@ -25,6 +26,7 @@ static int g_test_no = 0;
 #define SEED_TIME3 ((time_t)4305268800) /* Jun 2106 */
 
 static int g_num_langs;
+static int g_num_allocs;
 
 static polyseed_data* g_seed1;
 static polyseed_data* g_seed2;
@@ -245,6 +247,20 @@ static void do_not_zero(void* const ptr, const size_t n) {
     /* do nothing */
 }
 
+static void* count_alloc(size_t n) {
+    g_num_allocs++;
+    return malloc(n);
+}
+
+static void count_free(void* ptr) {
+    g_num_allocs--;
+    free(ptr);
+}
+
+static void* alloc_fail(size_t n) {
+    return NULL;
+}
+
 static void check_key(polyseed_data* data, polyseed_coin coin) {
     char key[TEST_KEYLEN];
     polyseed_keygen(data, coin, TEST_KEYLEN, key);
@@ -258,6 +274,8 @@ static bool test_inject1(void) {
         .u8_nfkd = &u8_nfkd_spaces,
         .time = &time1,
         .memzero = &do_not_zero,
+        .alloc = &count_alloc,
+        .free = &count_free,
     };
     polyseed_inject(&deps);
     return true;
@@ -463,6 +481,8 @@ static bool test_inject2(void) {
         .u8_nfkd = &u8_nfkd_spaces,
         .time = &time2,
         .memzero = &do_not_zero,
+        .alloc = &count_alloc,
+        .free = &count_free,
     };
     polyseed_inject(&deps);
     return true;
@@ -582,6 +602,8 @@ static bool test_inject3(void) {
         .u8_nfkd = &u8_nfkd_spaces,
         .time = &time3,
         .memzero = &do_not_zero,
+        .alloc = &count_alloc,
+        .free = &count_free,
     };
     polyseed_inject(&dep);
     return true;
@@ -652,6 +674,37 @@ static bool test_decode_garbage2(void) {
     return true;
 }
 
+static bool test_memleak(void) {
+    assert(g_num_allocs == 0);
+    return true;
+}
+
+static bool test_inject4(void) {
+    const polyseed_dependency dep = {
+        .rand = &gen_rand_bytes3,
+        .pbkdf2_sha256 = &pbkdf2_dummy3,
+        .u8_nfc = &u8_nfc_donothing,
+        .u8_nfkd = &u8_nfkd_spaces,
+        .memzero = &do_not_zero,
+        .alloc = &alloc_fail,
+    };
+    polyseed_inject(&dep);
+    return true;
+}
+
+static bool test_out_of_memory1(void) {
+    polyseed_data* seed = polyseed_create();
+    assert(seed == NULL);
+    return true;
+}
+
+static bool test_out_of_memory2(void) {
+    polyseed_data* seed;
+    polyseed_status res = polyseed_load(g_store3, &seed);
+    assert(res == POLYSEED_ERR_MEMORY);
+    return true;
+}
+
 int main() {
     RUN_TEST(test_inject1);
     RUN_TEST(test_num_langs);
@@ -694,6 +747,10 @@ int main() {
     RUN_TEST(test_free3);
     RUN_TEST(test_decode_garbage1);
     RUN_TEST(test_decode_garbage2);
+    RUN_TEST(test_memleak);
+    RUN_TEST(test_inject4);
+    RUN_TEST(test_out_of_memory1);
+    RUN_TEST(test_out_of_memory2);
 
     printf("\nAll tests were successful\n");
     return 0;

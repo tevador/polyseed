@@ -99,6 +99,7 @@ void polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
 
     assert(data != NULL);
     assert(lang != NULL);
+    assert((gf_elem)coin < GF_SIZE);
     assert(str_out != NULL);
     CHECK_DEPS();
 

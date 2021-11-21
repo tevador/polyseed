@@ -3,7 +3,6 @@
 
 #include "polyseed.h"
 #include "dependency.h"
-#include "phrase.h"
 #include "birthday.h"
 #include "lang.h"
 #include "gf.h"

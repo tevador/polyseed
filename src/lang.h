@@ -5,7 +5,6 @@
 #define LANG_H
 
 #include "polyseed.h"
-#include "phrase.h"
 
 #include <stdbool.h>
 
@@ -21,6 +20,8 @@ typedef struct polyseed_lang {
     bool compose;
     const char* words[POLYSEED_LANG_SIZE];
 } polyseed_lang;
+
+typedef const char* polyseed_phrase[POLYSEED_NUM_WORDS];
 
 POLYSEED_PRIVATE int polyseed_lang_find_word(const polyseed_lang* lang,
     const char* word);

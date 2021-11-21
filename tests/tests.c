@@ -37,36 +37,36 @@ static polyseed_storage g_store2;
 static polyseed_storage g_store3;
 
 static const char* g_phrase_en1 =
-    "episode able assist rocket orphan rebuild assume have "
-    "viable cable august tomato pledge remind accident dinosaur";
+    "raven tail swear infant grief assist regular lamp "
+    "duck valid someone little harsh puppy airport language";
 static const char* g_phrase_en2 =
-    "episod able assi rock orph rebui assu have "
-    "viab cabl augu toma pled remi accide dino";
+    "rave tail swea infan grie assi regul lamp "
+    "duck vali some litt hars pupp airp langua";
 static const char* g_phrase_en3 =
-    "epis ablexxx assi rock orph rebu assu have "
-    "viab cabl augu toma pled remi acci dino";
+    "ravexxx tail swea infan grie assi regul lamp "
+    "duck vali some litt hars pupp airp langua";
 static const char* g_phrase_en4 =
-    "episode able assist rocket orphan rebuild assume have "
-    "viable cable august tomato pledge remind accident dinosaurus";
+    "raven tail swear infantile grief assist regular lamp "
+    "duck valid someone little harsh puppy airport language";
 static const char* g_phrase_en5 =
-    "episode able assist rocket orphan rebuild assume have "
-    "viable cable august tomato pledge remind accident dinosaur ";
+    "raven tail swear infant grief assist regular lamp "
+    "duck valid someone little harsh puppy airport language ";
 
 static const char* g_phrase_es1 =
-    u8"puesto mente aliado olivo ábaco anular fondo labio "
-    u8"empresa actuar feo truco acoso órgano cañón reír";
+    u8"eje fin parte célebre tabú pestaña lienzo puma "
+    u8"prisión hora regalo lento existir lápiz lote sonoro";
 static const char* g_phrase_es2 =
-    "puesto mente aliado olivo abaco anular fondo labio "
-    "empresa actuar feo truco acoso organo canon reir";
+    "eje fin parte celebre tabu pestana lienzo puma "
+    "prision hora regalo lento existir lapiz lote sonoro";
 static const char* g_phrase_es3 =
-    "puest ment alia oliv abac anul fond labi "
-    "empr actu feo truc acos orga cano reir";
+    "eje fin part cele tabu pest lien puma "
+    "pris hora rega lent exis lapi lote sono";
 static const char* g_phrase_es4 =
-    "puesxxx ment alia oliv abac anul fond labi "
-    "empr actu feo truc acos orga cano reir";
+    "ejexxx fin part cele tabu pest lien puma "
+    "pris hora rega lent exis lapi lote sono";
 static const char* g_phrase_es5 =
-    "pues ment ali oliv abac anul fond labi "
-    "empr actu feo truc acos orga cano reir";
+    "eje fin part cele tab pest lien puma "
+    "pris hora rega lent exis lapi lote sono";
 
 static const char* g_phrase_garbage1 = "xxx xxx";
 
@@ -157,9 +157,9 @@ static void gen_rand_bytes1(void* result, size_t n) {
 }
 
 static const char rand_bytes2[] = {
-    0x95, 0x45, 0x00, 0x00, 0x73, 0x5c, 0x6f, 0x21,
-    0x30, 0x01, 0xb5, 0x71, 0xe0, 0x00, 0xbd, 0x2b,
-    0x29, 0xd8, 0xad,
+    0x5a, 0x2b, 0x02, 0xdf, 0x7d, 0xb2, 0x1f, 0xcb,
+    0xe6, 0xec, 0x6d, 0xf1, 0x37, 0xd5, 0x4c, 0x7b,
+    0x20, 0xfd, 0x2b,
 };
 
 static void gen_rand_bytes2(void* result, size_t n) {
@@ -193,7 +193,7 @@ static void pbkdf2_dummy2(const uint8_t* pw, size_t pwlen,
     uint8_t* key, size_t keylen) {
 
     assert(equals_hex(pw,
-        "95450000735c6f213001b571e000bd2b29d82d00000000000000000000000000"));
+        "5a2b02df7db21fcbe6ec6df137d54c7b20fd2b00000000000000000000000000"));
     assert(equals_hex(salt,
         "504f4c595345454400FFFFFF0000000033020000000000000000000000000000"));
 }

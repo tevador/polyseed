@@ -18,43 +18,6 @@
 
 #define KDF_NUM_ITERATIONS 4096
 
-static void data_to_poly(const polyseed_data* data, unsigned rem_bits,
-    gf_poly* poly) {
-
-    polyseed_gf_write(poly, &rem_bits, data->birthday, DATE_BITS);
-    polyseed_gf_write(poly, &rem_bits, data->reserved, RESERVED_BITS);
-    unsigned seed_rem_bits = SECRET_BITS;
-    for (int i = 0; seed_rem_bits > 0; ++i) {
-        unsigned chunk_bits = MIN((unsigned)CHAR_BIT, seed_rem_bits);
-        seed_rem_bits -= chunk_bits;
-        polyseed_gf_write(poly, &rem_bits, data->secret[i], chunk_bits);
-    }
-    assert(rem_bits == 0);
-}
-
-static void poly_to_data(const gf_poly* poly, polyseed_data* data) {
-    data->birthday = 0;
-    data->reserved = 0;
-    memset(data->secret, 0, sizeof(data->secret));
-    data->checksum = poly->coeff[0];
-
-    unsigned used_bits = RS_NUM_CHECK_DIGITS * GF_BITS;
-
-    polyseed_gf_read(poly, &used_bits, &data->birthday, DATE_BITS);
-    polyseed_gf_read(poly, &used_bits, &data->reserved, RESERVED_BITS);
-
-    unsigned seed_rem_bits = SECRET_BITS;
-    for (int i = 0; seed_rem_bits > 0; ++i) {
-        unsigned chunk_bits = MIN((unsigned)CHAR_BIT, seed_rem_bits);
-        seed_rem_bits -= chunk_bits;
-        unsigned chunk_data = data->secret[i];
-        polyseed_gf_read(poly, &used_bits, &chunk_data, chunk_bits);
-        data->secret[i] = chunk_data;
-    }
-
-    assert(used_bits == TOTAL_BITS);
-}
-
 static void write_str(char** pos, const char* str) {
     char* loc = *pos;
     while (*str != '\0') {
@@ -110,7 +73,7 @@ polyseed_data* polyseed_create(void) {
 
     /* encode polynomial */
     gf_poly poly = { 0 };
-    data_to_poly(seed, GF_BITS, &poly);
+    polyseed_data_to_poly(seed, &poly);
 
     /* calculate checksum */
     polyseed_rs_encode(&poly);
@@ -143,7 +106,8 @@ void polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
     /* encode polynomial with the existing checksum */
     gf_poly poly = { 0 };
     poly.coeff[0] = data->checksum;
-    data_to_poly(data, 0, &poly);
+    poly.degree = 1;
+    polyseed_data_to_poly(data, &poly);
 
     /* apply coin */
     poly.coeff[RS_NUM_CHECK_DIGITS] ^= coin;
@@ -228,7 +192,7 @@ polyseed_status polyseed_decode(const char* str,
     }
 
     /* decode polynomial into seed data */
-    poly_to_data(&poly, seed);
+    polyseed_poly_to_data(&poly, seed);
 
     /* nonzero reserved bits indicate a future version of the seed */
     if (seed->reserved != RESERVED_VALUE) {
@@ -310,7 +274,8 @@ polyseed_status polyseed_load(const polyseed_storage storage,
 
     /* encode polynomial with the existing checksum */
     poly.coeff[0] = seed->checksum;
-    data_to_poly(seed, 0, &poly);
+    poly.degree = 1;
+    polyseed_data_to_poly(seed, &poly);
 
     /* checksum */
     if (!polyseed_rs_check(&poly)) {

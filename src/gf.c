@@ -2,36 +2,108 @@
 /* See LICENSE for licensing information */
 
 #include "gf.h"
+#include "storage.h"
+#include "birthday.h"
 #include "dependency.h"
+#include "rs_code.h"
 
-void polyseed_gf_write(gf_poly* poly, unsigned* rem_bits, unsigned value,
-    unsigned bits) {
-    if (*rem_bits == 0) {
-        poly->degree++;
-        *rem_bits = GF_BITS;
+#include <assert.h>
+#include <limits.h>
+#include <string.h>
+
+#define SHARE_BITS 10 /* bits of the secret per word */
+#define DATA_WORDS POLYSEED_NUM_WORDS - RS_NUM_CHECK_DIGITS
+
+void polyseed_data_to_poly(const polyseed_data* data, gf_poly* poly) {
+
+    unsigned extra_val = (data->reserved << DATE_BITS) | data->birthday;
+    unsigned extra_bits = RESERVED_BITS + DATE_BITS;
+
+    unsigned word_bits = 0;
+    unsigned word_val = 0;
+
+    unsigned secret_idx = 0;
+    unsigned secret_val = data->secret[secret_idx];
+    unsigned secret_bits = CHAR_BIT;
+    unsigned seed_rem_bits = SECRET_BITS - CHAR_BIT;
+
+    for (int i = 0; i < DATA_WORDS; ++i) {
+        while (word_bits < SHARE_BITS) {
+            if (secret_bits == 0) {
+                secret_idx++;
+                secret_bits = MIN(seed_rem_bits, CHAR_BIT);
+                secret_val = data->secret[secret_idx];
+                seed_rem_bits -= secret_bits;
+            }
+            unsigned chunk_bits = MIN(secret_bits, SHARE_BITS - word_bits);
+            secret_bits -= chunk_bits;
+            word_bits += chunk_bits;
+            word_val <<= chunk_bits;
+            word_val |= (secret_val >> secret_bits) & ((1u << chunk_bits) - 1);
+        }
+        word_val <<= 1;
+        extra_bits--;
+        word_val |= (extra_val >> extra_bits) & 1;
+        poly->coeff[poly->degree + i] = word_val;
+        word_val = 0;
+        word_bits = 0;
     }
-    unsigned digit_bits = MIN(*rem_bits, bits);
-    unsigned rest_bits = bits - digit_bits;
-    *rem_bits -= digit_bits;
-    poly->coeff[poly->degree] |= ((value >> rest_bits)
-        & ((1u << digit_bits) - 1)) << *rem_bits;
-    if (rest_bits > 0) {
-        polyseed_gf_write(poly, rem_bits, value & ((1u << rest_bits) - 1),
-            rest_bits);
-    }
+
+    assert(seed_rem_bits == 0);
+    assert(secret_bits == 0);
+    assert(extra_bits == 0);
+
+    poly->degree += DATA_WORDS - 1;
 }
 
-void polyseed_gf_read(const gf_poly* poly, unsigned* used_bits, unsigned* value,
-    unsigned bits) {
-    unsigned coeff_index = *used_bits / GF_BITS;
-    unsigned bit_index = *used_bits % GF_BITS;
-    unsigned digit_bits = MIN((unsigned)GF_BITS - bit_index, bits);
-    unsigned rem_bits = GF_BITS - bit_index - digit_bits;
-    unsigned rest_bits = bits - digit_bits;
-    *value |= ((poly->coeff[coeff_index] >> rem_bits)
-        & ((1u << digit_bits) - 1)) << rest_bits;
-    *used_bits += digit_bits;
-    if (rest_bits > 0) {
-        polyseed_gf_read(poly, used_bits, value, rest_bits);
+void polyseed_poly_to_data(const gf_poly* poly, polyseed_data* data) {
+    data->birthday = 0;
+    data->reserved = 0;
+    memset(data->secret, 0, sizeof(data->secret));
+    data->checksum = poly->coeff[0];
+
+    unsigned extra_val = 0;
+    unsigned extra_bits = 0;
+
+    unsigned word_bits = 0;
+    unsigned word_val = 0;
+
+    unsigned secret_idx = 0;
+    unsigned secret_bits = 0;
+    unsigned seed_bits = 0;
+
+    for (int i = RS_NUM_CHECK_DIGITS; i <= POLY_MAX_DEGREE; ++i) {
+        word_val = poly->coeff[i];
+
+        extra_val <<= 1;
+        extra_val |= word_val & 1;
+        word_val >>= 1;
+        word_bits = GF_BITS - 1;
+        extra_bits++;
+
+        while (word_bits > 0) {
+            if (secret_bits == CHAR_BIT) {
+                secret_idx++;
+                seed_bits += secret_bits;
+                secret_bits = 0;
+            }
+            unsigned chunk_bits = MIN(word_bits, CHAR_BIT - secret_bits);
+            word_bits -= chunk_bits;
+            unsigned chunk_mask = ((1u << chunk_bits) - 1);
+            if (chunk_bits < CHAR_BIT) {
+                data->secret[secret_idx] <<= chunk_bits;
+            }
+            data->secret[secret_idx] |= (word_val >> word_bits) & chunk_mask;
+            secret_bits += chunk_bits;
+        }
     }
+
+    seed_bits += secret_bits;
+
+    assert(word_bits == 0);
+    assert(seed_bits == SECRET_BITS);
+    assert(extra_bits == RESERVED_BITS + DATE_BITS);
+
+    data->birthday = extra_val & DATE_MASK;
+    data->reserved = extra_val >> DATE_BITS;
 }

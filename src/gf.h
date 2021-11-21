@@ -24,10 +24,10 @@ typedef struct gf_poly {
     unsigned degree;
 } gf_poly;
 
-POLYSEED_PRIVATE void polyseed_gf_write(gf_poly* poly, unsigned* rem_bits,
-    unsigned value, unsigned bits);
+POLYSEED_PRIVATE
+void polyseed_data_to_poly(const polyseed_data* data, gf_poly* poly);
 
-POLYSEED_PRIVATE void polyseed_gf_read(const gf_poly* poly, unsigned* used_bits,
-    unsigned* value, unsigned bits);
+POLYSEED_PRIVATE
+void polyseed_poly_to_data(const gf_poly* poly, polyseed_data* data);
 
 #endif

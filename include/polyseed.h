@@ -38,12 +38,12 @@ typedef struct polyseed_dependency {
     polyseed_randbytes* randbytes;
     /* Function to calculate PBKDF2 based on HMAC-SHA256 */
     polyseed_pbkdf2* pbkdf2_sha256;
+    /* Function to securely erase memory */
+    polyseed_memzero* memzero;
     /* Function to convert a UTF8 string to the composed canonical form. */
     polyseed_transform* u8_nfc;
     /* Function to convert a UTF8 string to the decomposed canonical form. */
     polyseed_transform* u8_nfkd;
-    /* Function to securely erase memory */
-    polyseed_memzero* memzero;
     /* OPTIONAL: Function to get the current time */
     polyseed_time* time;
     /* OPTIONAL: Function to allocate memory */

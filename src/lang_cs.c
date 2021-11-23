@@ -1,10 +1,13 @@
 ﻿#include "lang.h"
 
+/* Based on BIP-39 with the correct word order */
+/* https://github.com/bitcoin/bips/pull/493#issuecomment-970511014 */
+
 POLYSEED_PRIVATE const polyseed_lang polyseed_lang_cs = {
     .name = u8"čeština",
     .name_en = "Czech",
     .separator = " ",
-    .is_sorted = false, /* https://github.com/bitcoin/bips/pull/493#issuecomment-970511014 */
+    .is_sorted = true,
     .has_prefix = true,
     .has_accents = false,
     .compose = false,
@@ -1646,9 +1649,9 @@ POLYSEED_PRIVATE const polyseed_lang polyseed_lang_cs = {
         "surovina",
         "svah",
         "svalstvo",
-        "svetr",
         "svatba",
         "svazek",
+        "svetr",
         "svisle",
         "svitek",
         "svoboda",

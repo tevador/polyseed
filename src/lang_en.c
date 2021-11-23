@@ -1,5 +1,7 @@
 #include "lang.h"
 
+/* Based on BIP-39 (unchanged) */
+
 POLYSEED_PRIVATE const polyseed_lang polyseed_lang_en = {
     .name = "English",
     .name_en = "English",

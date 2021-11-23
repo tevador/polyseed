@@ -54,19 +54,19 @@ static const char* g_phrase_en5 =
 
 static const char* g_phrase_es1 =
     u8"eje fin parte célebre tabú pestaña lienzo puma "
-    u8"prisión hora regalo lento existir lápiz lote sonoro";
+    u8"prisión hora regalo lengua existir lápiz lote sonoro";
 static const char* g_phrase_es2 =
     "eje fin parte celebre tabu pestana lienzo puma "
-    "prision hora regalo lento existir lapiz lote sonoro";
+    "prision hora regalo lengua existir lapiz lote sonoro";
 static const char* g_phrase_es3 =
     "eje fin part cele tabu pest lien puma "
-    "pris hora rega lent exis lapi lote sono";
+    "pris hora rega leng exis lapi lote sono";
 static const char* g_phrase_es4 =
     "ejexxx fin part cele tabu pest lien puma "
-    "pris hora rega lent exis lapi lote sono";
+    "pris hora rega leng exis lapi lote sono";
 static const char* g_phrase_es5 =
     "eje fin part cele tab pest lien puma "
-    "pris hora rega lent exis lapi lote sono";
+    "pris hora rega leng exis lapi lote sono";
 
 static const char* g_phrase_garbage1 = "xxx xxx";
 

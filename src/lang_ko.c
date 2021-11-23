@@ -1,5 +1,7 @@
 ﻿#include "lang.h"
 
+/* Based on BIP-39 (unchanged) */
+
 POLYSEED_PRIVATE const polyseed_lang polyseed_lang_ko = {
     .name = u8"한국어",
     .name_en = "Korean",

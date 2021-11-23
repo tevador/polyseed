@@ -24,15 +24,15 @@ static const polyseed_lang* languages[] = {
     /* sorted wordlists first */
     /* https://github.com/bitcoin/bips/blob/master/bip-0039/bip-0039-wordlists.md */
     &polyseed_lang_en,
+    &polyseed_lang_jp,
     &polyseed_lang_ko,
+    &polyseed_lang_es,
     &polyseed_lang_fr,
     &polyseed_lang_it,
+    &polyseed_lang_cs,
     &polyseed_lang_pt,
-    &polyseed_lang_jp,
-    &polyseed_lang_es,
     &polyseed_lang_zh_s,
     &polyseed_lang_zh_t,
-    &polyseed_lang_cs,  
 };
 
 #define NUM_LANGS sizeof(languages) / sizeof(uintptr_t)

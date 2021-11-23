@@ -1,5 +1,7 @@
 ﻿#include "lang.h"
 
+/* Based on BIP-39 (unchanged) */
+
 POLYSEED_PRIVATE const polyseed_lang polyseed_lang_zh_s = {
     .name = u8"中文(简体)",
     .name_en = "Chinese (Simplified)",

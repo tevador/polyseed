@@ -16,7 +16,7 @@
 #include <string.h>
 #include <limits.h>
 
-#define KDF_NUM_ITERATIONS 4096
+#define KDF_NUM_ITERATIONS 10000
 
 static void write_str(char** pos, const char* str) {
     char* loc = *pos;

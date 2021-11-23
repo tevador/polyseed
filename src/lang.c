@@ -229,3 +229,29 @@ bool polyseed_phrase_decode(const polyseed_phrase phrase,
     }
     return false;
 }
+
+void polyseed_lang_check(const polyseed_lang* lang) {
+    /* check the language is sorted correctly */
+    if (lang->is_sorted) {
+        polyseed_cmp* cmp = get_comparer(lang);
+        const char* prev = lang->words[0];
+        for (int i = 1; i < POLYSEED_LANG_SIZE; ++i) {
+            const char* word = lang->words[i];
+            assert(("incorrectly sorted wordlist", cmp(&prev, &word) < 0));
+            prev = word;
+        }
+    }
+    /* all words must be in NFKD */
+    for (int i = 0; i < POLYSEED_LANG_SIZE; ++i) {
+        polyseed_str norm;
+        const char* word = lang->words[i];
+        UTF8_DECOMPOSE(word, norm);
+        assert(("incorrectly normalized wordlist", !strcmp(word, norm)));
+    }
+    /* accented languages must be composed */
+    assert(!lang->has_accents || lang->compose);
+    /* normalized separator must be a space */
+    polyseed_str separator;
+    UTF8_DECOMPOSE(lang->separator, separator);
+    assert(!strcmp(" ", separator));
+}

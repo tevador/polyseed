@@ -3,6 +3,7 @@
 
 #include "polyseed.h"
 #include "dependency.h"
+#include "lang.h"
 
 #include <stdlib.h>
 #include <time.h>
@@ -21,4 +22,12 @@ void polyseed_inject(const polyseed_dependency* deps) {
         polyseed_deps.free = &free;
     }
     CHECK_DEPS();
+
+    /* self-test */
+#ifndef NDEBUG
+    for (int i = 0; i < polyseed_get_num_langs(); ++i) {
+        const polyseed_lang* lang = polyseed_get_lang(i);
+        polyseed_lang_check(lang);
+    }
+#endif
 }

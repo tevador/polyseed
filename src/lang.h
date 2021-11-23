@@ -29,4 +29,6 @@ POLYSEED_PRIVATE int polyseed_lang_find_word(const polyseed_lang* lang,
 POLYSEED_PRIVATE bool polyseed_phrase_decode(const polyseed_phrase phrase,
     uint_fast16_t idx_out[POLYSEED_NUM_WORDS], const polyseed_lang** lang_out);
 
+POLYSEED_PRIVATE void polyseed_lang_check(const polyseed_lang* lang);
+
 #endif

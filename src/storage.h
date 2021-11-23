@@ -9,8 +9,6 @@
 #include <limits.h>
 
 #define SECRET_BUFFER_SIZE 32
-#define RESERVED_BITS 5
-#define RESERVED_VALUE 0
 #define SECRET_BITS 150
 #define SECRET_SIZE (SECRET_BITS + CHAR_BIT - 1) / CHAR_BIT /* 19 */
 #define CLEAR_BITS (SECRET_SIZE) * (CHAR_BIT) - (SECRET_BITS) /* 2 */
@@ -20,7 +18,7 @@
 /* Seed data structure for serialization */
 typedef struct polyseed_data {
     unsigned birthday;
-    unsigned reserved;
+    unsigned features;
     /* padded with zeroes for future compatibility with longer seeds */
     uint8_t secret[SECRET_BUFFER_SIZE];
     gf_elem checksum;

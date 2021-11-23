@@ -4,6 +4,7 @@
 #include "polyseed.h"
 #include "dependency.h"
 #include "birthday.h"
+#include "features.h"
 #include "lang.h"
 #include "gf.h"
 #include "storage.h"
@@ -65,7 +66,7 @@ polyseed_data* polyseed_create(void) {
 
     /* create seed */
     seed->birthday = birthday_encode(GET_TIME());
-    seed->reserved = RESERVED_VALUE;
+    seed->features = FEATURES_DEFAULT;
     memset(seed->secret, 0, sizeof(seed->secret));
     GET_RANDOM_BYTES(seed->secret, SECRET_SIZE);
     seed->secret[SECRET_SIZE - 1] &= CLEAR_MASK;
@@ -140,9 +141,8 @@ void polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
     MEMZERO_LOC(str_tmp);
 }
 
-polyseed_status polyseed_decode(const char* str,
-    polyseed_coin coin, const polyseed_lang** lang_out,
-    polyseed_data** seed_out) {
+polyseed_status polyseed_decode(const char* str, polyseed_coin coin,
+    const polyseed_lang** lang_out, polyseed_data** seed_out) {
 
     assert(str != NULL);
     assert((gf_elem)coin < GF_SIZE);
@@ -194,8 +194,8 @@ polyseed_status polyseed_decode(const char* str,
     /* decode polynomial into seed data */
     polyseed_poly_to_data(&poly, seed);
 
-    /* nonzero reserved bits indicate a future version of the seed */
-    if (seed->reserved != RESERVED_VALUE) {
+    /* check features */
+    if (!is_supported(seed->features)) {
         polyseed_free(seed);
         res = POLYSEED_ERR_UNSUPPORTED;
         goto cleanup;
@@ -235,7 +235,7 @@ void polyseed_keygen(const polyseed_data* seed, polyseed_coin coin,
     salt[11] = 0xff;
     store32(&salt[12], coin);           /* domain separate by coin */
     store32(&salt[16], seed->birthday); /* domain separate by birthday */
-    store32(&salt[20], seed->reserved); /* domain separate by reserved bits */
+    store32(&salt[20], seed->features); /* domain separate by features */
     
     PBKDF2_SHA256(seed->secret, SECRET_BUFFER_SIZE, salt, sizeof(salt),
         KDF_NUM_ITERATIONS, key_out, key_size);
@@ -279,14 +279,52 @@ polyseed_status polyseed_load(const polyseed_storage storage,
 
     /* checksum */
     if (!polyseed_rs_check(&poly)) {
-        res = POLYSEED_ERR_CHECKSUM;
         polyseed_free(seed);
-    }
-    else {
-        res = POLYSEED_OK;
-        *seed_out = seed;
+        res = POLYSEED_ERR_CHECKSUM;
+        goto cleanup;
     }
 
+    /* check features */
+    if (!is_supported(seed->features)) {
+        polyseed_free(seed);
+        res = POLYSEED_ERR_UNSUPPORTED;
+        goto cleanup;
+    }
+
+    res = POLYSEED_OK;
+    *seed_out = seed;
+
+cleanup:
     MEMZERO_LOC(poly);
     return res;
+}
+
+void polyseed_crypt(polyseed_data* seed, const polyseed_mask mask) {
+    assert(seed != NULL);
+    assert(mask != NULL);
+
+    /* apply mask */
+    for (int i = 0; i < SECRET_SIZE; ++i) {
+        seed->secret[i] ^= mask[i];
+    }
+    seed->secret[SECRET_SIZE - 1] &= CLEAR_MASK;
+
+    seed->features ^= ENCRYPTED_MASK;
+
+    gf_poly poly = { 0 };
+
+    /* encode polynomial */
+    polyseed_data_to_poly(seed, &poly);
+
+    /* calculate new checksum */
+    polyseed_rs_encode(&poly);
+
+    seed->checksum = poly.coeff[0];
+
+    MEMZERO_LOC(poly);
+}
+
+int polyseed_is_encrypted(const polyseed_data* seed) {
+    assert(seed != NULL);
+    return is_encrypted(seed->features) ? 1 : 0;
 }

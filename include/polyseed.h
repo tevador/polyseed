@@ -22,6 +22,9 @@ typedef uint8_t polyseed_storage[POLYSEED_SIZE];
 /* Mnemonic phrase buffer */
 typedef char polyseed_str[POLYSEED_STR_SIZE];
 
+/* Mask for encryption and decryption */
+typedef uint8_t polyseed_mask[32];
+
 /* Dependency injection definitions */
 typedef void polyseed_randbytes(void* result, size_t n);
 typedef void polyseed_pbkdf2(const uint8_t* pw, size_t pwlen,
@@ -263,6 +266,28 @@ void polyseed_store(const polyseed_data* seed, polyseed_storage storage);
 POLYSEED_API
 polyseed_status polyseed_load(const polyseed_storage storage,
     polyseed_data** seed_out);
+
+/**
+ * Encrypts or decrypts the seed data.
+ *
+ * @param seed is the pointer to the seed data. Must not be NULL.
+ * @param mask is the mask buffer. Must not be NULL. The mask should be derived
+ *        from a user-provided password.
+ */
+POLYSEED_API
+void polyseed_crypt(polyseed_data* seed, const polyseed_mask mask);
+
+/**
+ * Determine if the seed contents are encrypted. The seed is considered
+ * encrypted if the polyseed_crypt function has been applied to it
+ * odd-number of times.
+ *
+ * @param seed is the pointer to the seed data. Must not be NULL.
+ *
+ * @return 1 if the seed is encrypted, 0 otherwise.
+*/
+POLYSEED_API
+int polyseed_is_encrypted(const polyseed_data* seed);
 
 #ifdef __cplusplus
 }

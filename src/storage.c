@@ -4,6 +4,7 @@
 #include "polyseed.h"
 #include "storage.h"
 #include "birthday.h"
+#include "features.h"
 #include "gf.h"
 
 #include <stdint.h>
@@ -30,7 +31,7 @@ void polyseed_data_store(const polyseed_data* data, polyseed_storage storage) {
     uint8_t* pos = storage;
     memcpy(pos, STORAGE_HEADER, HEADER_SIZE);
     pos += HEADER_SIZE;
-    store16(pos, data->reserved << DATE_BITS | data->birthday);
+    store16(pos, data->features << DATE_BITS | data->birthday);
     pos += 2;
     memcpy(pos, data->secret, SECRET_SIZE);
     pos += SECRET_SIZE;
@@ -51,11 +52,11 @@ polyseed_status polyseed_data_load(const polyseed_storage storage,
     uint16_t v1 = load16(pos);
     data->birthday = v1 & DATE_MASK;
     v1 >>= DATE_BITS;
-    if (v1 >= (1u << RESERVED_BITS)) {
+    if (v1 >= (1u << FEATURE_BITS)) {
         /* Top bit of v1 was not zero */
         return POLYSEED_ERR_FORMAT;
     }
-    data->reserved = v1;
+    data->features = v1;
     pos += 2;
     memset(data->secret, 0, sizeof(data->secret));
     memcpy(data->secret, pos, SECRET_SIZE);

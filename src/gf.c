@@ -4,6 +4,7 @@
 #include "gf.h"
 #include "storage.h"
 #include "birthday.h"
+#include "features.h"
 #include "dependency.h"
 #include "rs_code.h"
 
@@ -16,8 +17,8 @@
 
 void polyseed_data_to_poly(const polyseed_data* data, gf_poly* poly) {
 
-    unsigned extra_val = (data->reserved << DATE_BITS) | data->birthday;
-    unsigned extra_bits = RESERVED_BITS + DATE_BITS;
+    unsigned extra_val = (data->features << DATE_BITS) | data->birthday;
+    unsigned extra_bits = FEATURE_BITS + DATE_BITS;
 
     unsigned word_bits = 0;
     unsigned word_val = 0;
@@ -58,7 +59,7 @@ void polyseed_data_to_poly(const polyseed_data* data, gf_poly* poly) {
 
 void polyseed_poly_to_data(const gf_poly* poly, polyseed_data* data) {
     data->birthday = 0;
-    data->reserved = 0;
+    data->features = 0;
     memset(data->secret, 0, sizeof(data->secret));
     data->checksum = poly->coeff[0];
 
@@ -102,8 +103,8 @@ void polyseed_poly_to_data(const gf_poly* poly, polyseed_data* data) {
 
     assert(word_bits == 0);
     assert(seed_bits == SECRET_BITS);
-    assert(extra_bits == RESERVED_BITS + DATE_BITS);
+    assert(extra_bits == FEATURE_BITS + DATE_BITS);
 
     data->birthday = extra_val & DATE_MASK;
-    data->reserved = extra_val >> DATE_BITS;
+    data->features = extra_val >> DATE_BITS;
 }

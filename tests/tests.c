@@ -80,6 +80,13 @@ static const char* g_phrase_garbage2 =
 "xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx "
 "xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx ";
 
+static const polyseed_mask g_test_mask = {
+    0xa6, 0x9f, 0x2e, 0x1a, 0x45, 0x33, 0x2e, 0x80,
+    0xbf, 0xfe, 0xc5, 0x7b, 0x2e, 0x6f, 0x22, 0xe1,
+    0x2e, 0xc8, 0xdb, 0x64, 0xb7, 0x82, 0x48, 0xd1,
+    0x39, 0x36, 0x0c, 0x69, 0x23, 0x66, 0xb5, 0x62,
+};
+
 static polyseed_str g_phrase_out;
 
 static const polyseed_lang* g_lang_en;
@@ -653,6 +660,32 @@ static void test_roundtrip3(void) {
     }
 }
 
+static bool test_encrypt(void) {
+    if (g_lang_en == NULL) {
+        return false;
+    }
+    assert(!polyseed_is_encrypted(g_seed3));
+    polyseed_crypt(g_seed3, g_test_mask);
+    assert(polyseed_is_encrypted(g_seed3));
+    polyseed_encode(g_seed3, g_lang_en, POLYSEED_AEON, g_phrase_out);
+    return true;
+}
+
+static bool test_decrypt(void) {
+    if (g_lang_en == NULL) {
+        return false;
+    }
+    polyseed_data* seed;
+    polyseed_status res = polyseed_decode(g_phrase_out, POLYSEED_AEON, NULL, &seed);
+    assert(res == POLYSEED_OK);
+    assert(polyseed_is_encrypted(seed));
+    polyseed_crypt(seed, g_test_mask);
+    assert(!polyseed_is_encrypted(seed));
+    check_key(seed, POLYSEED_AEON);
+    polyseed_free(seed);
+    return true;
+}
+
 static bool test_free3(void) {
     polyseed_free(g_seed3);
     return true;
@@ -744,6 +777,8 @@ int main() {
     RUN_TEST(test_keygen3);
     RUN_TEST(test_store_load3);
     RUN_MULT(test_roundtrip3);
+    RUN_TEST(test_encrypt);
+    RUN_TEST(test_decrypt);
     RUN_TEST(test_free3);
     RUN_TEST(test_decode_garbage1);
     RUN_TEST(test_decode_garbage2);

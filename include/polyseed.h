@@ -4,6 +4,7 @@
 #ifndef POLYSEED_H
 #define POLYSEED_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include <time.h>
 
@@ -22,15 +23,12 @@ typedef uint8_t polyseed_storage[POLYSEED_SIZE];
 /* Mnemonic phrase buffer */
 typedef char polyseed_str[POLYSEED_STR_SIZE];
 
-/* Mask for encryption and decryption */
-typedef uint8_t polyseed_mask[32];
-
 /* Dependency injection definitions */
 typedef void polyseed_randbytes(void* result, size_t n);
 typedef void polyseed_pbkdf2(const uint8_t* pw, size_t pwlen,
     const uint8_t* salt, size_t saltlen, uint64_t iterations,
     uint8_t* key, size_t keylen);
-typedef void polyseed_transform(const char* str, polyseed_str norm);
+typedef size_t polyseed_transform(const char* str, polyseed_str norm);
 typedef time_t polyseed_time(time_t* t);
 typedef void polyseed_memzero(void* const ptr, const size_t len);
 typedef void* polyseed_malloc(size_t n);
@@ -47,7 +45,7 @@ typedef struct polyseed_dependency {
     polyseed_transform* u8_nfc;
     /* Function to convert a UTF8 string to the decomposed canonical form. */
     polyseed_transform* u8_nfkd;
-    /* OPTIONAL: Function to get the current time */
+    /* OPTIONAL: Function to get the current unix time  */
     polyseed_time* time;
     /* OPTIONAL: Function to allocate memory */
     polyseed_malloc* alloc;
@@ -268,14 +266,13 @@ polyseed_status polyseed_load(const polyseed_storage storage,
     polyseed_data** seed_out);
 
 /**
- * Encrypts or decrypts the seed data.
+ * Encrypts or decrypts the seed data with a password.
  *
  * @param seed is the pointer to the seed data. Must not be NULL.
- * @param mask is the mask buffer. Must not be NULL. The mask should be derived
- *        from a user-provided password.
+ * @param password is a user-provided password in UTF8. Must not be NULL.
  */
 POLYSEED_API
-void polyseed_crypt(polyseed_data* seed, const polyseed_mask mask);
+void polyseed_crypt(polyseed_data* seed, const char* password);
 
 /**
  * Determine if the seed contents are encrypted. The seed is considered

@@ -94,7 +94,7 @@ Additional 3 functions are optional dependencies. If they are not provided (the 
 
 | dependency | description | libc function |
 |------------|-------------|----------------|
-| time  | Function to get the current time | `time_t time(time_t *arg);` |
+| time  | Function to get the current unix time | `time_t time(time_t *arg);` |
 | alloc | Function to allocate memory | `void* malloc(size_t size);` |
 | free | Function to free memory | `void free(void* ptr)` |
 

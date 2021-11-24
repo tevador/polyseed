@@ -80,11 +80,13 @@ static const char* g_phrase_garbage2 =
 "xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx "
 "xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx ";
 
-static const polyseed_mask g_test_mask = {
-    0xa6, 0x9f, 0x2e, 0x1a, 0x45, 0x33, 0x2e, 0x80,
-    0xbf, 0xfe, 0xc5, 0x7b, 0x2e, 0x6f, 0x22, 0xe1,
-    0x2e, 0xc8, 0xdb, 0x64, 0xb7, 0x82, 0x48, 0xd1,
-    0x39, 0x36, 0x0c, 0x69, 0x23, 0x66, 0xb5, 0x62,
+static const char* g_test_pass = "password";
+
+static const uint8_t g_test_mask[] = {
+    0x54, 0x4a, 0x88, 0x95, 0xff, 0xc0, 0x45, 0x1c,
+    0x9b, 0x8e, 0x28, 0x1e, 0x18, 0x2d, 0x0d, 0x73,
+    0x63, 0x7d, 0x1b, 0xd7, 0xcb, 0x6e, 0xed, 0x8f,
+    0x84, 0x35, 0xb3, 0x13, 0x8c, 0x0c, 0xf0, 0x4e,
 };
 
 static polyseed_str g_phrase_out;
@@ -192,7 +194,7 @@ static void pbkdf2_dummy1(const uint8_t* pw, size_t pwlen,
     assert(equals_hex(pw,
         "dd76e7359a0ded37cd0ff0f3c829a5ae01673300000000000000000000000000"));
     assert(equals_hex(salt,
-        "504f4c595345454400FFFFFF0000000001000000000000000000000000000000"));
+        "504f4c5953454544206b657900ffffff00000000010000000000000000000000"));
 }
 
 static void pbkdf2_dummy2(const uint8_t* pw, size_t pwlen,
@@ -202,28 +204,39 @@ static void pbkdf2_dummy2(const uint8_t* pw, size_t pwlen,
     assert(equals_hex(pw,
         "5a2b02df7db21fcbe6ec6df137d54c7b20fd2b00000000000000000000000000"));
     assert(equals_hex(salt,
-        "504f4c595345454400FFFFFF0000000033020000000000000000000000000000"));
+        "504f4c5953454544206b657900ffffff00000000330200000000000000000000"));
 }
 
 static void pbkdf2_dummy3(const uint8_t* pw, size_t pwlen,
     const uint8_t* salt, size_t saltlen, uint64_t iterations,
     uint8_t* key, size_t keylen) {
 
-    assert(equals_hex(pw,
-        "67b936dfa4da6ae8d3b3cdb3b937f4027b0e3b00000000000000000000000000"));
-    assert(equals_hex(salt,
-        "504f4c595345454400FFFFFF01000000f7030000000000000000000000000000"));
+    if (saltlen == 32) {
+        assert(equals_hex(pw,
+            "67b936dfa4da6ae8d3b3cdb3b937f4027b0e3b00000000000000000000000000"));
+        assert(equals_hex(salt,
+            "504f4c5953454544206b657900ffffff01000000f70300000000000000000000"));
+    }
+    else { /* encryption mask */
+        assert(equals_hex(pw,
+            "70617373776f7264"));
+        assert(equals_hex(salt,
+            "504f4c5953454544206d61736b00ffff"));
+        assert(keylen == sizeof(g_test_mask));
+        memcpy(key, g_test_mask, keylen);
+    }
 }
 
-static void u8_nfc_donothing(const char* str, polyseed_str norm) {
+static size_t u8_nfc_donothing(const char* str, polyseed_str norm) {
     /* do not compose */
     strncpy(norm, str, POLYSEED_STR_SIZE);
+    return POLYSEED_STR_SIZE - 1;
 }
 
-static void u8_nfkd_spaces(const char* str, polyseed_str norm) {
+static size_t u8_nfkd_spaces(const char* str, polyseed_str norm) {
     /* normalize only ideographic spaces to allow Japanese phrases to roundtrip */
     int i = 0;
-    for (; i < POLYSEED_STR_SIZE && *str != '\0'; ++i) {
+    for (; i < POLYSEED_STR_SIZE - 1 && *str != '\0'; ++i) {
         if (str[0] == '\xe3' && str[1] == '\x80' && str[2] == '\x80') {
             norm[i] = ' ';
             str += 3;
@@ -233,9 +246,8 @@ static void u8_nfkd_spaces(const char* str, polyseed_str norm) {
             ++str;
         }
     }
-    if (i < POLYSEED_STR_SIZE) {
-        norm[i] = '\0';
-    }
+    norm[i] = '\0';
+    return i;
 }
 
 static time_t time1(time_t* t) {
@@ -665,7 +677,7 @@ static bool test_encrypt(void) {
         return false;
     }
     assert(!polyseed_is_encrypted(g_seed3));
-    polyseed_crypt(g_seed3, g_test_mask);
+    polyseed_crypt(g_seed3, g_test_pass);
     assert(polyseed_is_encrypted(g_seed3));
     polyseed_encode(g_seed3, g_lang_en, POLYSEED_AEON, g_phrase_out);
     return true;
@@ -679,7 +691,7 @@ static bool test_decrypt(void) {
     polyseed_status res = polyseed_decode(g_phrase_out, POLYSEED_AEON, NULL, &seed);
     assert(res == POLYSEED_OK);
     assert(polyseed_is_encrypted(seed));
-    polyseed_crypt(seed, g_test_mask);
+    polyseed_crypt(seed, g_test_pass);
     assert(!polyseed_is_encrypted(seed));
     check_key(seed, POLYSEED_AEON);
     polyseed_free(seed);

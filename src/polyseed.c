@@ -116,6 +116,7 @@ void polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
     polyseed_str str_tmp;
     char* pos = str_tmp;
     int w;
+    size_t str_size;
 
 #define WORD(i) lang->words[poly.coeff[i]]
 
@@ -126,15 +127,18 @@ void polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
     }
     write_str(&pos, WORD(w));
     *pos = '\0';
+    str_size = pos - str_tmp;
+    assert(str_size < POLYSEED_STR_SIZE);
 
 #undef WORD
 
     /* compose if needed by the language */
     if (lang->compose) {
-        UTF8_COMPOSE(str_tmp, str_out);
+        str_size = UTF8_COMPOSE(str_tmp, str_out);
+        assert(str_size < POLYSEED_STR_SIZE);
     }
     else {
-        strncpy(str_out, str_tmp, POLYSEED_STR_SIZE);
+        memcpy(str_out, str_tmp, str_size + 1);
     }
 
     MEMZERO_LOC(poly);
@@ -156,10 +160,8 @@ polyseed_status polyseed_decode(const char* str, polyseed_coin coin,
     polyseed_data* seed;
 
     /* canonical decomposition */
-    UTF8_DECOMPOSE(str, str_tmp);
-
-    /* make sure the string is null-terminated */
-    str_tmp[POLYSEED_STR_SIZE - 1] = '\0';
+    size_t str_size = UTF8_DECOMPOSE(str, str_tmp);
+    assert(str_size < POLYSEED_STR_SIZE);
 
     /* split into words */
     if (str_split(str_tmp, words) != POLYSEED_NUM_WORDS) {
@@ -229,13 +231,13 @@ void polyseed_keygen(const polyseed_data* seed, polyseed_coin coin,
     assert(key_out != NULL);
     CHECK_DEPS();
 
-    uint8_t salt[32] = "POLYSEED";
-    salt[9] = 0xff;
-    salt[10] = 0xff;
-    salt[11] = 0xff;
-    store32(&salt[12], coin);           /* domain separate by coin */
-    store32(&salt[16], seed->birthday); /* domain separate by birthday */
-    store32(&salt[20], seed->features); /* domain separate by features */
+    uint8_t salt[32] = "POLYSEED key";
+    salt[13] = 0xff;
+    salt[14] = 0xff;
+    salt[15] = 0xff;
+    store32(&salt[16], coin);           /* domain separate by coin */
+    store32(&salt[20], seed->birthday); /* domain separate by birthday */
+    store32(&salt[24], seed->features); /* domain separate by features */
     
     PBKDF2_SHA256(seed->secret, SECRET_BUFFER_SIZE, salt, sizeof(salt),
         KDF_NUM_ITERATIONS, key_out, key_size);
@@ -299,9 +301,25 @@ cleanup:
     return res;
 }
 
-void polyseed_crypt(polyseed_data* seed, const polyseed_mask mask) {
+void polyseed_crypt(polyseed_data* seed, const char* password) {
     assert(seed != NULL);
-    assert(mask != NULL);
+    assert(password != NULL);
+
+    polyseed_str pass_norm;
+
+    /* normalize password */
+    size_t str_size = UTF8_DECOMPOSE(password, pass_norm);
+    assert(str_size < POLYSEED_STR_SIZE);
+
+    /* derive an encryption mask */
+    uint8_t mask[32];
+
+    char salt[16] = "POLYSEED mask";
+    salt[14] = 0xff;
+    salt[15] = 0xff;
+
+    PBKDF2_SHA256(pass_norm, str_size, salt, sizeof(salt),
+        KDF_NUM_ITERATIONS, mask, sizeof(mask));
 
     /* apply mask */
     for (int i = 0; i < SECRET_SIZE; ++i) {
@@ -322,6 +340,8 @@ void polyseed_crypt(polyseed_data* seed, const polyseed_mask mask) {
     seed->checksum = poly.coeff[0];
 
     MEMZERO_LOC(poly);
+    MEMZERO_LOC(mask);
+    MEMZERO_LOC(pass_norm);
 }
 
 int polyseed_is_encrypted(const polyseed_data* seed) {

@@ -218,9 +218,11 @@ void polyseed_keygen(const polyseed_data* seed, polyseed_coin coin,
  * @param coin is the coin the mnemonic phrase is intended for.
  * @param str_out is the buffer where the mnemonic phrase will be stored
  *        as a C-style string. Must not be NULL.
+ *
+ * @return the length of the mnemonic phrase, excluding the terminating null.
 */
 POLYSEED_API
-void polyseed_encode(const polyseed_data* seed, const polyseed_lang* lang,
+size_t polyseed_encode(const polyseed_data* seed, const polyseed_lang* lang,
     polyseed_coin coin, polyseed_str str_out);
 
 /**

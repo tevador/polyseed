@@ -95,7 +95,7 @@ time_t polyseed_get_birthday(const polyseed_data* data) {
     return birthday_decode(data->birthday);
 }
 
-void polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
+size_t polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
     polyseed_coin coin, polyseed_str str_out) {
 
     assert(data != NULL);
@@ -143,6 +143,8 @@ void polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
 
     MEMZERO_LOC(poly);
     MEMZERO_LOC(str_tmp);
+
+    return str_size;
 }
 
 polyseed_status polyseed_decode(const char* str, polyseed_coin coin,

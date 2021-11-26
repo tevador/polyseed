@@ -70,7 +70,7 @@ typedef enum polyseed_status {
     POLYSEED_ERR_NUM_WORDS = 1,
     /* Unknown language or unsupported words */
     POLYSEED_ERR_LANG = 2,
-    /* Checksum mistmach */
+    /* Checksum mismatch */
     POLYSEED_ERR_CHECKSUM = 3,
     /* Unsupported seed features */
     POLYSEED_ERR_UNSUPPORTED = 4,

@@ -56,3 +56,9 @@ include_directories(polyseed-tests
 target_compile_definitions(polyseed-tests PRIVATE POLYSEED_STATIC)
 target_link_libraries(polyseed-tests
   PRIVATE polyseed_static)
+
+include(GNUInstallDirs)
+install(TARGETS polyseed polyseed_static
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

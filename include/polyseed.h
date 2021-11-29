@@ -104,8 +104,10 @@ Shared/static library definitions
 #else
     #ifdef POLYSEED_SHARED
         #define POLYSEED_API __attribute__ ((visibility ("default")))
-    #else
+    #elif defined(POLYSEED_STATIC)
         #define POLYSEED_API __attribute__ ((visibility ("hidden")))
+    #else
+        #define POLYSEED_API
     #endif
     #define POLYSEED_PRIVATE __attribute__ ((visibility ("hidden")))
 #endif

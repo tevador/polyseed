@@ -8,7 +8,6 @@ project(polyseed)
 set(polyseed_sources
 src/dependency.c
 src/gf.c
-src/gf_tables.c
 src/lang.c
 src/lang_cs.c
 src/lang_en.c
@@ -21,7 +20,6 @@ src/lang_pt.c
 src/lang_zh_s.c
 src/lang_zh_t.c
 src/polyseed.c
-src/rs_code.c
 src/storage.c)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -59,6 +57,7 @@ target_link_libraries(polyseed-tests
 
 include(GNUInstallDirs)
 install(TARGETS polyseed polyseed_static
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

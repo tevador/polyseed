@@ -8,7 +8,6 @@
 #include "lang.h"
 #include "gf.h"
 #include "storage.h"
-#include "rs_code.h"
 
 #include <time.h>
 #include <assert.h>
@@ -76,7 +75,7 @@ polyseed_data* polyseed_create(void) {
     polyseed_data_to_poly(seed, &poly);
 
     /* calculate checksum */
-    polyseed_rs_encode(&poly);
+    gf_poly_encode(&poly);
     seed->checksum = poly.coeff[0];
 
     MEMZERO_LOC(poly);
@@ -107,11 +106,10 @@ size_t polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
     /* encode polynomial with the existing checksum */
     gf_poly poly = { 0 };
     poly.coeff[0] = data->checksum;
-    poly.degree = 1;
     polyseed_data_to_poly(data, &poly);
 
     /* apply coin */
-    poly.coeff[RS_NUM_CHECK_DIGITS] ^= coin;
+    poly.coeff[POLY_NUM_CHECK_DIGITS] ^= coin;
 
     polyseed_str str_tmp;
     char* pos = str_tmp;
@@ -178,11 +176,10 @@ polyseed_status polyseed_decode(const char* str, polyseed_coin coin,
     }
 
     /* finalize polynomial */
-    poly.coeff[RS_NUM_CHECK_DIGITS] ^= coin;
-    poly.degree = POLY_MAX_DEGREE;
+    poly.coeff[POLY_NUM_CHECK_DIGITS] ^= coin;
 
     /* checksum */
-    if (!polyseed_rs_check(&poly)) {
+    if (!gf_poly_check(&poly)) {
         res = POLYSEED_ERR_CHECKSUM;
         goto cleanup;
     }
@@ -278,11 +275,10 @@ polyseed_status polyseed_load(const polyseed_storage storage,
 
     /* encode polynomial with the existing checksum */
     poly.coeff[0] = seed->checksum;
-    poly.degree = 1;
     polyseed_data_to_poly(seed, &poly);
 
     /* checksum */
-    if (!polyseed_rs_check(&poly)) {
+    if (!gf_poly_check(&poly)) {
         polyseed_free(seed);
         res = POLYSEED_ERR_CHECKSUM;
         goto cleanup;
@@ -337,7 +333,7 @@ void polyseed_crypt(polyseed_data* seed, const char* password) {
     polyseed_data_to_poly(seed, &poly);
 
     /* calculate new checksum */
-    polyseed_rs_encode(&poly);
+    gf_poly_encode(&poly);
 
     seed->checksum = poly.coeff[0];
 

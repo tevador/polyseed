@@ -3,8 +3,8 @@
 * 16 mnemonic words (36% shorter than the original 25-word seed)
 * embedded wallet birthday to optimize restoring from the seed
 * supports encryption by a passphrase
-* 4 bits reserved for future updates
-* advanced checksum based on a Reed-Solomon linear code
+* can store up to 3 custom bits
+* advanced checksum based on a polynomial code
 * seeds are incompatible between different coins
 
 Supported languages:
@@ -43,7 +43,7 @@ To prevent the seed from being accidentally used with a different cryptocurrency
 
 ### Feature bits
 
-There are 5 feature bits in the phrase. Currently, only one bit is used as a flag to store if the seed has been encrypted by a passphrase. The remaining 4 bits are reserved and the library requires them to be zero (if not, `POLYSEED_ERR_UNSUPPORTED` is returned). Future versions of the software may define different values for the reserved bits.
+There are 5 feature bits in the phrase. The first 2 bits are for internal use (one bit is used to indicate a seed encrypted by a passphrase and the other bit is reserved for a future update of the key derivation function). The remaining 3 bits are reserved for library users and can be enabled and accessed through the API. The library requires reserved bits to be zero (if not, `POLYSEED_ERR_UNSUPPORTED` is returned).
 
 ### Wallet birthday
 

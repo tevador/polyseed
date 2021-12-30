@@ -7,6 +7,7 @@ project(polyseed)
 
 set(polyseed_sources
 src/dependency.c
+src/features.c
 src/gf.c
 src/lang.c
 src/lang_cs.c

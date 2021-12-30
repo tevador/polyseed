@@ -167,13 +167,43 @@ POLYSEED_API
 const char* polyseed_get_lang_name_en(const polyseed_lang* lang);
 
 /**
- * Creates a new seed.
+ * Enables the optional seed features. Up to 3 different boolean flags are
+ * supported. By default, all 3 features are disabled.
  *
- * @return an opaque pointer to the seed data or NULL if memory allocation
- *         failed.
+ * Example of use:
+ *   #define FEATURE_FOO 1
+ *   #define FEATURE_BAR 2
+ *   #define FEATURE_QUX 4
+ *   polyseed_enable_features(FEATURE_FOO | FEATURE_BAR | FEATURE_QUX);
+ *
+ * @param mask is a bitmask of the enabled features. Only the least
+ *        significant 3 bits are used.
+ *
+ * @return the number of features that were enabled (0, 1, 2 or 3).
+ */
+POLYSEED_API
+int polyseed_enable_features(unsigned mask);
+
+/**
+ * Creates a new seed with specific features.
+ *
+ * Example of use:
+ *   polyseed_data* seed;
+ *   polyseed_status status = polyseed_create(FEATURE_FOO | FEATURE_QUX, &seed);
+ *
+ * @param features are the values of the boolean features for this seed. Only
+ *        the least significant 3 bits are used.
+ * @param seed_out is a pointer where the seed pointer will be stored.
+ *        Must not be NULL.
+ *
+ * @return POLYSEED_OK if the operation was successful.
+ *         POLYSEED_ERR_UNSUPPORTED if requesting features that have not been
+ *         enabled.
+ *         POLYSEED_ERR_MEMORY if memory allocation fails.
+ *         In case of an error, *seed_out is undefined.
 */
 POLYSEED_API
-polyseed_data* polyseed_create(void);
+polyseed_status polyseed_create(unsigned features, polyseed_data** seed_out);
 
 /**
  * Securely erases the seed data and releases the allocated memory.
@@ -193,10 +223,24 @@ void polyseed_free(polyseed_data* seed);
  *
  * @param seed is the pointer to the seed data. Must not be NULL.
  *
- * @return time_t structure with the approximate date when the seed was created.
+ * @return Unix timestamp with the approximate date when the seed was created.
  */
 POLYSEED_API
-time_t polyseed_get_birthday(const polyseed_data* seed);
+uint64_t polyseed_get_birthday(const polyseed_data* seed);
+
+/**
+ * Gets the value of a seed feature flag.
+ *
+ * Example of use:
+ *   unsigned foo = polyseed_get_feature(seed, FEATURE_FOO);
+ *
+ * @param seed is the pointer to the seed data. Must not be NULL.
+ * @param mask is the mask of the feature that is requested.
+ *
+ * @return nonzero value if the feature is set, zero otherwise.
+ */
+POLYSEED_API
+unsigned polyseed_get_feature(const polyseed_data* seed, unsigned mask);
 
 /**
  * Derives a secret key from the mnemonic seed.

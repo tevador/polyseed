@@ -54,18 +54,24 @@ static int str_split(char* str, polyseed_phrase words) {
     return w;
 }
 
-polyseed_data* polyseed_create(void) {
+polyseed_status polyseed_create(unsigned features, polyseed_data** seed_out) {
     CHECK_DEPS();
+
+    /* check features */
+    unsigned seed_features = make_features(features);
+    if (!polyseed_features_supported(seed_features)) {
+        return POLYSEED_ERR_UNSUPPORTED;
+    }
 
     /* alocate memory */
     polyseed_data* seed = ALLOC(sizeof(polyseed_data));
     if (seed == NULL) {
-        return NULL;
+        return POLYSEED_ERR_MEMORY;
     }
 
     /* create seed */
     seed->birthday = birthday_encode(GET_TIME());
-    seed->features = FEATURES_DEFAULT;
+    seed->features = seed_features;
     memset(seed->secret, 0, sizeof(seed->secret));
     GET_RANDOM_BYTES(seed->secret, SECRET_SIZE);
     seed->secret[SECRET_SIZE - 1] &= CLEAR_MASK;
@@ -79,7 +85,9 @@ polyseed_data* polyseed_create(void) {
     seed->checksum = poly.coeff[0];
 
     MEMZERO_LOC(poly);
-    return seed;
+
+    *seed_out = seed;
+    return POLYSEED_OK;
 }
 
 void polyseed_free(polyseed_data* seed) {
@@ -89,9 +97,14 @@ void polyseed_free(polyseed_data* seed) {
     }
 }
 
-time_t polyseed_get_birthday(const polyseed_data* data) {
+uint64_t polyseed_get_birthday(const polyseed_data* data) {
     assert(data != NULL);
     return birthday_decode(data->birthday);
+}
+
+unsigned polyseed_get_feature(const polyseed_data* seed, unsigned mask) {
+    assert(seed != NULL);
+    return get_features(seed->features, mask);
 }
 
 size_t polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
@@ -196,7 +209,7 @@ polyseed_status polyseed_decode(const char* str, polyseed_coin coin,
     polyseed_poly_to_data(&poly, seed);
 
     /* check features */
-    if (!is_supported(seed->features)) {
+    if (!polyseed_features_supported(seed->features)) {
         polyseed_free(seed);
         res = POLYSEED_ERR_UNSUPPORTED;
         goto cleanup;
@@ -285,7 +298,7 @@ polyseed_status polyseed_load(const polyseed_storage storage,
     }
 
     /* check features */
-    if (!is_supported(seed->features)) {
+    if (!polyseed_features_supported(seed->features)) {
         polyseed_free(seed);
         res = POLYSEED_ERR_UNSUPPORTED;
         goto cleanup;

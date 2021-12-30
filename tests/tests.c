@@ -25,6 +25,10 @@ static int g_test_no = 0;
 #define SEED_TIME2 ((time_t)3118651200) /* Oct 2068 */
 #define SEED_TIME3 ((time_t)4305268800) /* Jun 2106 */
 
+#define FEATURE_FOO 1
+#define FEATURE_BAR 2
+#define FEATURE_QUX 4
+
 static int g_num_langs;
 static int g_num_allocs;
 
@@ -215,7 +219,7 @@ static void pbkdf2_dummy3(const uint8_t* pw, size_t pwlen,
         assert(equals_hex(pw,
             "67b936dfa4da6ae8d3b3cdb3b937f4027b0e3b00000000000000000000000000"));
         assert(equals_hex(salt,
-            "504f4c5953454544206b657900ffffff01000000f70300000000000000000000"));
+            "504f4c5953454544206b657900ffffff01000000f70300001000000000000000"));
     }
     else { /* encryption mask */
         assert(equals_hex(pw,
@@ -285,6 +289,15 @@ static void check_key(polyseed_data* data, polyseed_coin coin) {
     polyseed_keygen(data, coin, TEST_KEYLEN, key);
 }
 
+static void check_features(polyseed_data* seed, bool foo, bool bar, bool qux) {
+    unsigned foo1 = polyseed_get_feature(seed, FEATURE_FOO);
+    assert((foo1 != 0) == foo);
+    unsigned bar1 = polyseed_get_feature(seed, FEATURE_BAR);
+    assert((bar1 != 0) == bar);
+    unsigned qux1 = polyseed_get_feature(seed, FEATURE_QUX);
+    assert((qux1 != 0) == qux);
+}
+
 static bool test_inject1(void) {
     const polyseed_dependency deps = {
         .randbytes = &gen_rand_bytes1,
@@ -325,14 +338,29 @@ static void test_get_lang_name(void) {
 }
 
 static bool test_create1(void) {
-    g_seed1 = polyseed_create();
+    polyseed_status status = polyseed_create(0, &g_seed1);
+    assert(status == POLYSEED_OK);
     assert(g_seed1 != NULL);
     return true;
 }
 
 static bool test_birthday1(void) {
-    time_t birthday = polyseed_get_birthday(g_seed1);
+    uint64_t birthday = polyseed_get_birthday(g_seed1);
     assert(birthday <= SEED_TIME1);
+    assert(birthday + 2630000 > SEED_TIME1);
+    return true;
+}
+
+static bool test_features1(void) {
+    check_features(g_seed1, false, false, false);
+    polyseed_data* seed;
+    polyseed_status status;
+    status = polyseed_create(FEATURE_FOO, &seed);
+    assert(status == POLYSEED_ERR_UNSUPPORTED);
+    status = polyseed_create(FEATURE_BAR, &seed);
+    assert(status == POLYSEED_ERR_UNSUPPORTED);
+    status = polyseed_create(FEATURE_QUX, &seed);
+    assert(status == POLYSEED_ERR_UNSUPPORTED);
     return true;
 }
 
@@ -476,6 +504,7 @@ static void test_roundtrip1(void) {
         polyseed_status res = polyseed_decode(phrase, POLYSEED_MONERO, &lang_out, &seed);
         assert(res == POLYSEED_OK);
         assert(lang == lang_out);
+        check_features(seed, false, false, false);
         check_key(seed, POLYSEED_MONERO);
         polyseed_free(seed);
         subtest_end(true);
@@ -508,14 +537,40 @@ static bool test_inject2(void) {
 }
 
 static bool test_create2(void) {
-    g_seed2 = polyseed_create();
+    polyseed_status status = polyseed_create(0, &g_seed2);
+    assert(status == POLYSEED_OK);
     assert(g_seed2 != NULL);
     return true;
 }
 
 static bool test_birthday2(void) {
-    time_t birthday = polyseed_get_birthday(g_seed2);
+    uint64_t birthday = polyseed_get_birthday(g_seed2);
     assert(birthday <= SEED_TIME2);
+    assert(birthday + 2630000 > SEED_TIME2);
+    return true;
+}
+
+static bool test_features2(void) {
+    check_features(g_seed2, false, false, false);
+    int num_features;
+    polyseed_data* seed;
+    polyseed_status status;
+    num_features = polyseed_enable_features(FEATURE_FOO | FEATURE_BAR | FEATURE_QUX);
+    assert(num_features == 3);
+    status = polyseed_create(FEATURE_FOO, &seed);
+    assert(status == POLYSEED_OK);
+    check_features(seed, true, false, false);
+    polyseed_free(seed);
+    status = polyseed_create(FEATURE_BAR, &seed);
+    assert(status == POLYSEED_OK);
+    check_features(seed, false, true, false);
+    polyseed_free(seed);
+    status = polyseed_create(FEATURE_QUX, &seed);
+    assert(status == POLYSEED_OK);
+    check_features(seed, false, false, true);
+    polyseed_free(seed);
+    num_features = polyseed_enable_features(0);
+    assert(num_features == 0);
     return true;
 }
 
@@ -628,15 +683,38 @@ static bool test_inject3(void) {
     return true;
 }
 
+static bool test_features3a(void) {
+    int num_features = polyseed_enable_features(FEATURE_FOO | FEATURE_QUX);
+    assert(num_features == 2);
+    polyseed_data* seed;
+    polyseed_status status;
+    status = polyseed_create(FEATURE_FOO, &seed);
+    assert(status == POLYSEED_OK);
+    polyseed_free(seed);
+    status = polyseed_create(FEATURE_BAR, &seed);
+    assert(status == POLYSEED_ERR_UNSUPPORTED);
+    status = polyseed_create(FEATURE_QUX, &seed);
+    assert(status == POLYSEED_OK);
+    polyseed_free(seed);
+    return true;
+}
+
 static bool test_create3(void) {
-    g_seed3 = polyseed_create();
+    polyseed_status status = polyseed_create(FEATURE_QUX, &g_seed3);
+    assert(status == POLYSEED_OK);
     assert(g_seed3 != NULL);
     return true;
 }
 
+static bool test_features3b(void) {
+    check_features(g_seed3, false, false, true);
+    return true;
+}
+
 static bool test_birthday3(void) {
-    time_t birthday = polyseed_get_birthday(g_seed3);
+    uint64_t birthday = polyseed_get_birthday(g_seed3);
     assert(birthday <= SEED_TIME3);
+    assert(birthday + 2630000 > SEED_TIME3);
     return true;
 }
 
@@ -666,6 +744,7 @@ static void test_roundtrip3(void) {
         polyseed_status res = polyseed_decode(phrase, POLYSEED_AEON, &lang_out, &seed);
         assert(res == POLYSEED_OK);
         assert(lang == lang_out);
+        check_features(seed, false, false, true);
         check_key(seed, POLYSEED_AEON);
         polyseed_free(seed);
         subtest_end(true);
@@ -738,8 +817,9 @@ static bool test_inject4(void) {
 }
 
 static bool test_out_of_memory1(void) {
-    polyseed_data* seed = polyseed_create();
-    assert(seed == NULL);
+    polyseed_data* seed;
+    polyseed_status res = polyseed_create(0, &seed);
+    assert(res == POLYSEED_ERR_MEMORY);
     return true;
 }
 
@@ -757,6 +837,7 @@ int main() {
     RUN_MULT(test_get_lang_name);
     RUN_TEST(test_create1);
     RUN_TEST(test_birthday1);
+    RUN_TEST(test_features1);
     RUN_TEST(test_keygen1);
     RUN_TEST(test_store_load1);
     RUN_TEST(test_format);
@@ -774,6 +855,7 @@ int main() {
     RUN_TEST(test_inject2);
     RUN_TEST(test_create2);
     RUN_TEST(test_birthday2);
+    RUN_TEST(test_features2);
     RUN_TEST(test_keygen2);
     RUN_TEST(test_store_load2);
     RUN_TEST(test_encode_es);
@@ -784,7 +866,9 @@ int main() {
     RUN_TEST(test_decode_es_prefix2);
     RUN_TEST(test_free2);
     RUN_TEST(test_inject3);
+    RUN_TEST(test_features3a);
     RUN_TEST(test_create3);
+    RUN_TEST(test_features3b);
     RUN_TEST(test_birthday3);
     RUN_TEST(test_keygen3);
     RUN_TEST(test_store_load3);

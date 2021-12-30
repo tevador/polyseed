@@ -52,7 +52,7 @@ polyseed_status polyseed_data_load(const polyseed_storage storage,
     uint16_t v1 = load16(pos);
     data->birthday = v1 & DATE_MASK;
     v1 >>= DATE_BITS;
-    if (v1 >= (1u << FEATURE_BITS)) {
+    if (v1 > FEATURE_MASK) {
         /* Top bit of v1 was not zero */
         return POLYSEED_ERR_FORMAT;
     }

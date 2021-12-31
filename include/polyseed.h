@@ -170,12 +170,6 @@ const char* polyseed_get_lang_name_en(const polyseed_lang* lang);
  * Enables the optional seed features. Up to 3 different boolean flags are
  * supported. By default, all 3 features are disabled.
  *
- * Example of use:
- *   #define FEATURE_FOO 1
- *   #define FEATURE_BAR 2
- *   #define FEATURE_QUX 4
- *   polyseed_enable_features(FEATURE_FOO | FEATURE_BAR | FEATURE_QUX);
- *
  * @param mask is a bitmask of the enabled features. Only the least
  *        significant 3 bits are used.
  *
@@ -186,10 +180,6 @@ int polyseed_enable_features(unsigned mask);
 
 /**
  * Creates a new seed with specific features.
- *
- * Example of use:
- *   polyseed_data* seed;
- *   polyseed_status status = polyseed_create(FEATURE_FOO | FEATURE_QUX, &seed);
  *
  * @param features are the values of the boolean features for this seed. Only
  *        the least significant 3 bits are used.
@@ -230,9 +220,6 @@ uint64_t polyseed_get_birthday(const polyseed_data* seed);
 
 /**
  * Gets the value of a seed feature flag.
- *
- * Example of use:
- *   unsigned foo = polyseed_get_feature(seed, FEATURE_FOO);
  *
  * @param seed is the pointer to the seed data. Must not be NULL.
  * @param mask is the mask of the feature that is requested.

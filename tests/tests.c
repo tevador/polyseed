@@ -219,7 +219,7 @@ static void pbkdf2_dummy3(const uint8_t* pw, size_t pwlen,
         assert(equals_hex(pw,
             "67b936dfa4da6ae8d3b3cdb3b937f4027b0e3b00000000000000000000000000"));
         assert(equals_hex(salt,
-            "504f4c5953454544206b657900ffffff01000000f70300001000000000000000"));
+            "504f4c5953454544206b657900ffffff01000000f70300000100000000000000"));
     }
     else { /* encryption mask */
         assert(equals_hex(pw,
@@ -700,14 +700,14 @@ static bool test_features3a(void) {
 }
 
 static bool test_create3(void) {
-    polyseed_status status = polyseed_create(FEATURE_QUX, &g_seed3);
+    polyseed_status status = polyseed_create(FEATURE_FOO, &g_seed3);
     assert(status == POLYSEED_OK);
     assert(g_seed3 != NULL);
     return true;
 }
 
 static bool test_features3b(void) {
-    check_features(g_seed3, false, false, true);
+    check_features(g_seed3, true, false, false);
     return true;
 }
 
@@ -744,7 +744,7 @@ static void test_roundtrip3(void) {
         polyseed_status res = polyseed_decode(phrase, POLYSEED_AEON, &lang_out, &seed);
         assert(res == POLYSEED_OK);
         assert(lang == lang_out);
-        check_features(seed, false, false, true);
+        check_features(seed, true, false, false);
         check_key(seed, POLYSEED_AEON);
         polyseed_free(seed);
         subtest_end(true);

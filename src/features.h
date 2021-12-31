@@ -14,14 +14,14 @@
 #define INTERNAL_FEATURES 2
 #define USER_FEATURES 3
 #define USER_FEATURES_MASK ((1<<USER_FEATURES)-1)
-#define ENCRYPTED_MASK 1
+#define ENCRYPTED_MASK 16
 
 static inline unsigned make_features(unsigned user_features) {
-    return (user_features & USER_FEATURES_MASK) << INTERNAL_FEATURES;
+    return user_features & USER_FEATURES_MASK;
 }
 
 static inline unsigned get_features(unsigned features, unsigned mask) {
-    return (features >> INTERNAL_FEATURES) & (mask & USER_FEATURES_MASK);
+    return features & (mask & USER_FEATURES_MASK);
 }
 
 static inline bool is_encrypted(unsigned features) {

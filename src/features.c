@@ -14,8 +14,9 @@ int polyseed_enable_features(unsigned mask) {
     int num_enabled = 0;
     reserved_features = FEATURE_MASK ^ ENCRYPTED_MASK;
     for (int i = 0; i < USER_FEATURES; ++i) {
-        if ((mask & (1 << i))) {
-            reserved_features ^= (1 << (i + INTERNAL_FEATURES));
+        unsigned fmask = 1u << i;
+        if (mask & fmask) {
+            reserved_features ^= fmask;
             num_enabled++;
         }
     }

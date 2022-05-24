@@ -3,7 +3,7 @@
 /* Based on BIP-39 (unchanged) */
 
 POLYSEED_PRIVATE const polyseed_lang polyseed_lang_pt = {
-    .name = u8"português",
+    .name = u8"portuguÃªs",
     .name_en = "Portuguese",
     .separator = " ",
     .is_sorted = true,

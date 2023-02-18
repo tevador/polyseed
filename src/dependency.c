@@ -10,10 +10,14 @@
 
 POLYSEED_PRIVATE polyseed_dependency polyseed_deps;
 
+static uint64_t stdlib_time() {
+    return (uint64_t)time(NULL);
+}
+
 void polyseed_inject(const polyseed_dependency* deps) {
     polyseed_deps = *deps;
     if (polyseed_deps.time == NULL) {
-        polyseed_deps.time = &time;
+        polyseed_deps.time = &stdlib_time;
     }
     if (polyseed_deps.alloc == NULL) {
         polyseed_deps.alloc = &malloc;

@@ -12,7 +12,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 #include <limits.h>
 #include <stdlib.h>
 
@@ -21,9 +20,9 @@ typedef void multitest_func(void);
 
 static int g_test_no = 0;
 
-#define SEED_TIME1 ((time_t)1638446400) /* Dec 2021 */
-#define SEED_TIME2 ((time_t)3118651200) /* Oct 2068 */
-#define SEED_TIME3 ((time_t)4305268800) /* Jun 2106 */
+#define SEED_TIME1 ((uint64_t)1638446400) /* Dec 2021 */
+#define SEED_TIME2 ((uint64_t)3118651200) /* Oct 2068 */
+#define SEED_TIME3 ((uint64_t)4305268800) /* Jun 2106 */
 
 #define FEATURE_FOO 1
 #define FEATURE_BAR 2
@@ -254,15 +253,15 @@ static size_t u8_nfkd_spaces(const char* str, polyseed_str norm) {
     return i;
 }
 
-static time_t time1(time_t* t) {
+static uint64_t time1() {
     return SEED_TIME1;
 }
 
-static time_t time2(time_t* t) {
+static uint64_t time2() {
     return SEED_TIME2;
 }
 
-static time_t time3(time_t* t) {
+static uint64_t time3() {
     return SEED_TIME3;
 }
 

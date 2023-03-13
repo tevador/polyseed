@@ -45,7 +45,7 @@ static size_t utf8_nfkd_lazy(const char* str, polyseed_str norm) {
 #define MEMZERO_PTR(x, type) polyseed_deps.memzero((x), sizeof(type))
 #define UTF8_COMPOSE(a, b) polyseed_deps.u8_nfc((a), (b))
 #define UTF8_DECOMPOSE(a, b) utf8_nfkd_lazy((a), (b))
-#define GET_TIME() polyseed_deps.time(NULL)
+#define GET_TIME() polyseed_deps.time()
 #define ALLOC(x) polyseed_deps.alloc(x)
 #define FREE(x) polyseed_deps.free(x)
 

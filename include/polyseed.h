@@ -6,7 +6,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <time.h>
 
 /* Number of words in the mnemonic phrase */
 #define POLYSEED_NUM_WORDS 16
@@ -29,7 +28,7 @@ typedef void polyseed_pbkdf2(const uint8_t* pw, size_t pwlen,
     const uint8_t* salt, size_t saltlen, uint64_t iterations,
     uint8_t* key, size_t keylen);
 typedef size_t polyseed_transform(const char* str, polyseed_str norm);
-typedef time_t polyseed_time(time_t* t);
+typedef uint64_t polyseed_time(void);
 typedef void polyseed_memzero(void* const ptr, const size_t len);
 typedef void* polyseed_malloc(size_t n);
 typedef void polyseed_mfree(void* ptr);

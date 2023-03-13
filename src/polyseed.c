@@ -9,7 +9,7 @@
 #include "gf.h"
 #include "storage.h"
 
-#include <time.h>
+#include <stdint.h>
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>

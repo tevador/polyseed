@@ -9,7 +9,7 @@ POLYSEED_PRIVATE const polyseed_lang polyseed_lang_jp = {
     .is_sorted = true,
     .has_prefix = false,
     .has_accents = false,
-    .compose = false,
+    .compose = true,
     .words = {
         u8"あいこくしん",
         u8"あいさつ",

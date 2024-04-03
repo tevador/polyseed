@@ -202,10 +202,12 @@ int polyseed_lang_find_word(const polyseed_lang* lang, const char* word) {
     return lang_search(lang, word, cmp);
 }
 
-bool polyseed_phrase_decode(const polyseed_phrase phrase,
+polyseed_status polyseed_phrase_decode(const polyseed_phrase phrase,
     uint_fast16_t idx_out[POLYSEED_NUM_WORDS], const polyseed_lang** lang_out) {
-    /* Iterate through all languages and try to find one where
+    /* Iterate through all languages and try to find just one where
        all the words are a match. */
+    uint_fast16_t idx[POLYSEED_NUM_WORDS];
+    bool have_lang = false;
     for (int li = 0; li < NUM_LANGS; ++li) {
         const polyseed_lang* lang = languages[li];
         polyseed_cmp* cmp = get_comparer(lang);
@@ -217,17 +219,40 @@ bool polyseed_phrase_decode(const polyseed_phrase phrase,
                 success = false;
                 break;
             }
-            idx_out[wi] = value;
+            idx[wi] = value;
         }
         if (!success) {
             continue;
         }
+        if (have_lang) {
+            /* The phrase can decode in multiple languages.
+            Use polyseed_phrase_decode_explicit. */
+            return POLYSEED_ERR_MULT_LANG;
+        }
+        have_lang = true;
+        for (int wi = 0; wi < POLYSEED_NUM_WORDS; ++wi) {
+            idx_out[wi] = idx[wi];
+        }
         if (lang_out != NULL) {
             *lang_out = lang;
         }
-        return true;
     }
-    return false;
+    return have_lang ? POLYSEED_OK : POLYSEED_ERR_LANG;
+}
+
+polyseed_status polyseed_phrase_decode_explicit(const polyseed_phrase phrase,
+    const polyseed_lang* lang, uint_fast16_t idx_out[POLYSEED_NUM_WORDS]) {
+
+    polyseed_cmp* cmp = get_comparer(lang);
+    for (int wi = 0; wi < POLYSEED_NUM_WORDS; ++wi) {
+        const char* word = phrase[wi];
+        int value = lang_search(lang, word, cmp);
+        if (value < 0) {
+            return POLYSEED_ERR_LANG;
+        }
+        idx_out[wi] = value;
+    }
+    return POLYSEED_OK;
 }
 
 void polyseed_lang_check(const polyseed_lang* lang) {

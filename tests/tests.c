@@ -71,6 +71,10 @@ static const char* g_phrase_es5 =
     "eje fin part cele tab pest lien puma "
     "pris hora rega leng exis lapi lote sono";
 
+static const char* g_phrase_es_mult =
+    "impo sort usua cabi venu nobl oliv clim "
+    "cont barr marc auto prod vaca torn fati";
+
 static const char* g_phrase_garbage1 = "xxx xxx";
 
 static const char* g_phrase_garbage2 =
@@ -662,6 +666,25 @@ static bool test_decode_es_prefix2(void) {
     return true;
 }
 
+static bool test_decode_es_mult1(void) {
+    const polyseed_lang* lang;
+    polyseed_data* seed;
+    polyseed_status res = polyseed_decode(g_phrase_es_mult, POLYSEED_MONERO, &lang, &seed);
+    assert(res == POLYSEED_ERR_MULT_LANG);
+    return true;
+}
+
+static bool test_decode_es_mult2(void) {
+    if (g_lang_es == NULL) {
+        return false;
+    }
+    polyseed_data* seed;
+    polyseed_status res = polyseed_decode_explicit(g_phrase_es_mult, POLYSEED_MONERO, g_lang_es, &seed);
+    assert(res == POLYSEED_OK);
+    polyseed_free(seed);
+    return true;
+}
+
 static bool test_free2(void) {
     polyseed_free(g_seed2);
     return true;
@@ -863,6 +886,8 @@ int main() {
     RUN_TEST(test_decode_es_prefix1);
     RUN_TEST(test_decode_es_suffix);
     RUN_TEST(test_decode_es_prefix2);
+    RUN_TEST(test_decode_es_mult1);
+    RUN_TEST(test_decode_es_mult2);
     RUN_TEST(test_free2);
     RUN_TEST(test_inject3);
     RUN_TEST(test_features3a);

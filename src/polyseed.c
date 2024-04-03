@@ -183,8 +183,78 @@ polyseed_status polyseed_decode(const char* str, polyseed_coin coin,
     }
 
     /* decode words into polynomial coefficients */
-    if (!polyseed_phrase_decode(words, poly.coeff, lang_out)) {
-        res = POLYSEED_ERR_LANG;
+    res = polyseed_phrase_decode(words, poly.coeff, lang_out);
+
+    if (res != POLYSEED_OK) {
+        goto cleanup;
+    }
+
+    /* finalize polynomial */
+    poly.coeff[POLY_NUM_CHECK_DIGITS] ^= coin;
+
+    /* checksum */
+    if (!gf_poly_check(&poly)) {
+        res = POLYSEED_ERR_CHECKSUM;
+        goto cleanup;
+    }
+
+    /* alocate memory */
+    seed = ALLOC(sizeof(polyseed_data));
+
+    if (seed == NULL) {
+        res = POLYSEED_ERR_MEMORY;
+        goto cleanup;
+    }
+
+    /* decode polynomial into seed data */
+    polyseed_poly_to_data(&poly, seed);
+
+    /* check features */
+    if (!polyseed_features_supported(seed->features)) {
+        polyseed_free(seed);
+        res = POLYSEED_ERR_UNSUPPORTED;
+        goto cleanup;
+    }
+
+    *seed_out = seed;
+    res = POLYSEED_OK;
+
+cleanup:
+    MEMZERO_LOC(str_tmp);
+    MEMZERO_LOC(words);
+    MEMZERO_LOC(poly);
+    return res;
+}
+
+polyseed_status polyseed_decode_explicit(const char* str, polyseed_coin coin,
+    const polyseed_lang* lang, polyseed_data** seed_out) {
+
+    assert(str != NULL);
+    assert((gf_elem)coin < GF_SIZE);
+    assert(lang != NULL);
+    assert(seed_out != NULL);
+    CHECK_DEPS();
+
+    polyseed_str str_tmp;
+    polyseed_phrase words;
+    gf_poly poly = { 0 };
+    polyseed_status res;
+    polyseed_data* seed;
+
+    /* canonical decomposition */
+    size_t str_size = UTF8_DECOMPOSE(str, str_tmp);
+    assert(str_size < POLYSEED_STR_SIZE);
+
+    /* split into words */
+    if (str_split(str_tmp, words) != POLYSEED_NUM_WORDS) {
+        res = POLYSEED_ERR_NUM_WORDS;
+        goto cleanup;
+    }
+
+    /* decode words into polynomial coefficients */
+    res = polyseed_phrase_decode_explicit(words, lang, poly.coeff);
+
+    if (res != POLYSEED_OK) {
         goto cleanup;
     }
 

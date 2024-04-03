@@ -78,6 +78,8 @@ typedef enum polyseed_status {
     POLYSEED_ERR_FORMAT = 5,
     /* Memory allocation failure */
     POLYSEED_ERR_MEMORY = 6,
+    /* Phrase matches more than one language */
+    POLYSEED_ERR_MULT_LANG = 7,
 } polyseed_status;
 
 /* Opaque struct with the seed data */
@@ -274,6 +276,24 @@ size_t polyseed_encode(const polyseed_data* seed, const polyseed_lang* lang,
 POLYSEED_API
 polyseed_status polyseed_decode(const char* str, polyseed_coin coin,
     const polyseed_lang** lang_out, polyseed_data** seed_out);
+
+/**
+ * Decodes the seed from a mnemonic phrase with a specific language.
+ * This should be used if polyseed_decode returns POLYSEED_ERR_MULT_LANG.
+ *
+ * @param str is the mnemonic phrase as a C-style string. Must not be NULL.
+ * @param coin is the coin the mnemonic phrase is intended for.
+ * @param lang is a pointer to the language to decode the seed.
+ *        Must not be NULL.
+ * @param seed_out is a pointer where the seed pointer will be stored.
+ *        Must not be NULL.
+ *
+ * @return POLYSEED_OK if the operation was successful. Other values indicate
+ *         an error (in that case, *seed_out is undefined).
+ */
+POLYSEED_API
+polyseed_status polyseed_decode_explicit(const char* str, polyseed_coin coin,
+    const polyseed_lang* lang, polyseed_data** seed_out);
 
 /**
  * Serializes the seed data in a platform-independent way.

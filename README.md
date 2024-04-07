@@ -45,6 +45,8 @@ To prevent the seed from being accidentally used with a different cryptocurrency
 
 There are 5 feature bits in the phrase. The first 2 bits are for internal use (one bit is used to indicate a seed encrypted by a passphrase and the other bit is reserved for a future update of the key derivation function). The remaining 3 bits are reserved for library users and can be enabled and accessed through the API. The library requires reserved bits to be zero (if not, `POLYSEED_ERR_UNSUPPORTED` is returned).
 
+Note: 3rd party wallet software using polyseed should never define their own feature bits for compatibility reasons.
+
 ### Wallet birthday
 
 The mnemonic phrase stores the approximate date when the wallet was created. This allows the seed to be generated offline without access to the blockchain. Wallet software can easily convert a date to the corresponding block height when restoring a seed.

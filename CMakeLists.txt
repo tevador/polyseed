@@ -34,7 +34,7 @@ set_property(TARGET polyseed PROPERTY PUBLIC_HEADER include/polyseed.h)
 include_directories(polyseed
   include/)
 target_compile_definitions(polyseed PRIVATE POLYSEED_SHARED)
-set_target_properties(polyseed PROPERTIES VERSION 2.0.0
+set_target_properties(polyseed PROPERTIES VERSION 2.1.0
                                           SOVERSION 2
                                           C_STANDARD 11
                                           C_STANDARD_REQUIRED ON)

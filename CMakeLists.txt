@@ -1,7 +1,7 @@
 # Copyright (c) 2020-2021 tevador <tevador@gmail.com>
 # See LICENSE for licensing information
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 project(polyseed)
 

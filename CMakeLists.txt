@@ -43,7 +43,7 @@ add_library(polyseed_static STATIC ${polyseed_sources})
 set_property(TARGET polyseed_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 include_directories(polyseed_static
   include/)
-target_compile_definitions(polyseed_static PRIVATE POLYSEED_STATIC)
+target_compile_definitions(polyseed_static PUBLIC POLYSEED_STATIC)
 set_target_properties(polyseed_static PROPERTIES OUTPUT_NAME polyseed
                                                  C_STANDARD 11
                                                  C_STANDARD_REQUIRED ON)

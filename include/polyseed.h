@@ -57,6 +57,7 @@ typedef enum polyseed_coin {
     POLYSEED_MONERO = 0,
     POLYSEED_AEON = 1,
     POLYSEED_WOWNERO = 2,
+    POLYSEED_BELDEX = 3,
     /* Other coins should be added here sequentially. */
     /* The maximum supported value is 2047. */
     /* When adding a new coin, please open a pull request: */

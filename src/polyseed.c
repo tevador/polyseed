@@ -134,6 +134,8 @@ size_t polyseed_encode(const polyseed_data* data, const polyseed_lang* lang,
     /* output words */
     for (w = 0; w < POLYSEED_NUM_WORDS - 1; ++w) {
         write_str(&pos, WORD(w));
+        str_size = pos - str_tmp;
+        assert(str_size < POLYSEED_STR_SIZE);
         write_str(&pos, lang->separator);
     }
     write_str(&pos, WORD(w));

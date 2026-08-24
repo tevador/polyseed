@@ -87,6 +87,14 @@ static const char* g_phrase_garbage2 =
 "xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx "
 "xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx xxx ";
 
+/* serialized polyseed that will produce a very long phrase in Korean */
+static const polyseed_storage g_store_long_phrase = {
+    0x50, 0x4f, 0x4c, 0x59, 0x53, 0x45, 0x45, 0x44,
+    0x08, 0x00, 0xc6, 0xcc, 0x79, 0x60, 0x39, 0x22,
+    0xf1, 0xb9, 0x60, 0x8b, 0x22, 0xc3, 0x90, 0xe7,
+    0x79, 0x0e, 0x4c, 0x70, 0x39, 0xff, 0x36, 0x76,
+};
+
 static const char* g_test_pass = "password";
 
 static const uint8_t g_test_mask[] = {
@@ -100,6 +108,7 @@ static polyseed_str g_phrase_out;
 
 static const polyseed_lang* g_lang_en;
 static const polyseed_lang* g_lang_es;
+static const polyseed_lang* g_lang_ko;
 
 #define RUN_TEST(x) run_test(#x, &x)
 #define RUN_MULT(x) run_multitest(#x, &x)
@@ -417,6 +426,19 @@ static bool test_load_encode_en(void) {
     assert(res == POLYSEED_OK);
     polyseed_encode(seed, g_lang_en, POLYSEED_MONERO, g_phrase_out);
     assert(0 == strcmp(g_phrase_out, g_phrase_en1));
+    polyseed_free(seed);
+    return true;
+}
+
+static bool test_load_encode_ko(void) {
+    g_lang_ko = get_lang("Korean");
+    if (g_lang_ko == NULL) {
+        return false;
+    }
+    polyseed_data* seed;
+    polyseed_status res = polyseed_load(g_store_long_phrase, &seed);
+    assert(res == POLYSEED_OK);
+    polyseed_encode(seed, g_lang_ko, POLYSEED_MONERO, g_phrase_out);
     polyseed_free(seed);
     return true;
 }
@@ -865,6 +887,7 @@ int main() {
     RUN_TEST(test_format);
     RUN_TEST(test_encode_en);
     RUN_TEST(test_load_encode_en);
+    RUN_TEST(test_load_encode_ko);
     RUN_TEST(test_decode_en);
     RUN_TEST(test_decode_en_prefix);
     RUN_TEST(test_decode_en_suffix1);

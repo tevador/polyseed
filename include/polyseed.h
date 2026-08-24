@@ -17,7 +17,7 @@
 typedef uint8_t polyseed_storage[POLYSEED_SIZE];
 
 /* The maximum possible length of a mnemonic phrase */
-#define POLYSEED_STR_SIZE 360
+#define POLYSEED_STR_SIZE 576
 
 /* Mnemonic phrase buffer */
 typedef char polyseed_str[POLYSEED_STR_SIZE];

@@ -1,4 +1,25 @@
-﻿#include "lang.h"
+﻿/*
+ * Copyright (c) 2020-2026 tevador <tevador@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This wordlist is derived from the BIP-39 wordlist.
+ * Copyright (c) 2013 the BIP-39 authors (Marek Palatinus, Pavol Rusnak,
+ * Aaron Voisine, Sean Bowe), licensed under the MIT License. See the NOTICE
+ * file distributed with this work for the full attribution and license text.
+ */
+
+#include "lang.h"
 
 /* Based on BIP-39 with the correct word order */
 /* https://github.com/bitcoin/bips/pull/493#issuecomment-970511014 */

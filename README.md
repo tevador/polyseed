@@ -104,4 +104,4 @@ These are mostly needed for testing purposes, but can be also used to provide a 
 
 ## License
 
-The library is released under the LGPLv3 license. No restrictions are placed on software that just links to the library.
+The library is released under the Apache 2.0 license.

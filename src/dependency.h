@@ -24,9 +24,9 @@ extern polyseed_dependency polyseed_deps;
 /* only normalize strings that contain non-ASCII characters */
 static size_t utf8_nfkd_lazy(const char* str, polyseed_str norm) {
     size_t size = 0;
-    const char* pos = str;
+    const unsigned char* pos = (const unsigned char*)str;
     while (*pos != '\0' && size < POLYSEED_STR_SIZE - 1) {
-        if (*pos < 0) { /* non-ASCII */
+        if (*pos >= 0x80) { /* non-ASCII */
             return polyseed_deps.u8_nfkd(str, norm);
         }
         norm[size] = *pos;

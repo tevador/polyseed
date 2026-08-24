@@ -81,14 +81,16 @@ static int lang_search(const polyseed_lang* lang, const char* word,
 }
 
 static int compare_str(const char* key, const char* elm) {
+    const unsigned char* k = (const unsigned char*)key;
+    const unsigned char* e = (const unsigned char*)elm;
     for (;;) {
-        if (*key == '\0' || *key != *elm) {
+        if (*k == '\0' || *k != *e) {
             break;
         }
-        ++key;
-        ++elm;
+        ++k;
+        ++e;
     }
-    return (*key > *elm) - (*key < *elm);
+    return (*k > *e) - (*k < *e);
 }
 
 static int compare_str_wrap(const void* a, const void* b) {
@@ -98,20 +100,22 @@ static int compare_str_wrap(const void* a, const void* b) {
 }
 
 static int compare_prefix(const char* key, const char* elm, int n) {
+    const unsigned char* k = (const unsigned char*)key;
+    const unsigned char* e = (const unsigned char*)elm;
     for (int i = 1; ; ++i) {
-        if (*key == '\0') {
+        if (*k == '\0') {
             break;
         }
-        if (i >= n && key[1] == '\0') {
+        if (i >= n && k[1] == '\0') {
             break;
         }
-        if (*key != *elm) {
+        if (*k != *e) {
             break;
         }
-        ++key;
-        ++elm;
+        ++k;
+        ++e;
     }
-    return (*key > *elm) - (*key < *elm);
+    return (*k > *e) - (*k < *e);
 }
 
 static int compare_prefix_wrap(const void* a, const void* b) {
@@ -121,20 +125,22 @@ static int compare_prefix_wrap(const void* a, const void* b) {
 }
 
 static int compare_str_noaccent(const char* key, const char* elm) {
+    const unsigned char* k = (const unsigned char*)key;
+    const unsigned char* e = (const unsigned char*)elm;
     for (;;) {
-        while (*key < 0) { /* skip non-ASCII */
-            ++key;
+        while (*k >= 0x80) { /* skip non-ASCII */
+            ++k;
         }
-        while (*elm < 0) { /* skip non-ASCII */
-            ++elm;
+        while (*e >= 0x80) { /* skip non-ASCII */
+            ++e;
         }
-        if (*key == '\0' || *key != *elm) {
+        if (*k == '\0' || *k != *e) {
             break;
         }
-        ++key;
-        ++elm;
+        ++k;
+        ++e;
     }
-    return (*key > *elm) - (*key < *elm);
+    return (*k > *e) - (*k < *e);
 }
 
 static int compare_str_noaccent_wrap(const void* a, const void* b) {
@@ -144,32 +150,34 @@ static int compare_str_noaccent_wrap(const void* a, const void* b) {
 }
 
 static int compare_prefix_noaccent(const char* key, const char* elm, int n) {
+    const unsigned char* k = (const unsigned char*)key;
+    const unsigned char* e = (const unsigned char*)elm;
     for (int i = 1; ; ++i) {
-        while (*key < 0) { /* skip non-ASCII */
-            ++key;
+        while (*k >= 0x80) { /* skip non-ASCII */
+            ++k;
         }
-        while (*elm < 0) { /* skip non-ASCII */
-            ++elm;
+        while (*e >= 0x80) { /* skip non-ASCII */
+            ++e;
         }
-        if (*key == '\0') {
+        if (*k == '\0') {
             break;
         }
-        if (i >= n && key[1] == '\0') {
+        if (i >= n && k[1] == '\0') {
             break;
         }
-        if (*key != *elm) {
+        if (*k != *e) {
             break;
         }
-        ++key;
-        ++elm;
+        ++k;
+        ++e;
     }
-    while (*key < 0) { /* skip non-ASCII */
-        ++key;
+    while (*k >= 0x80) { /* skip non-ASCII */
+        ++k;
     }
-    while (*elm < 0) { /* skip non-ASCII */
-        ++elm;
+    while (*e >= 0x80) { /* skip non-ASCII */
+        ++e;
     }
-    return (*key > *elm) - (*key < *elm);
+    return (*k > *e) - (*k < *e);
 }
 
 static int compare_prefix_noaccent_wrap(const void* a, const void* b) {

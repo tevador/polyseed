@@ -1,0 +1,121 @@
+name: Build & test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  # =========================
+  # Linux (native + emulated)
+  # =========================
+  linux:
+    name: Linux (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: 386
+            image: debian:bookworm
+          - arch: amd64
+            image: debian:bookworm
+          - arch: arm/v7
+            image: debian:bookworm
+          - arch: aarch64
+            image: debian:bookworm
+          - arch: s390x
+            image: s390x/debian:bookworm
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Native amd64 build
+      - name: Build & test (native)
+        if: matrix.arch == 'amd64'
+        run: |
+          cmake -S . -B build
+          cmake --build build
+          ./build/polyseed-tests
+
+      # Emulated builds
+      - name: Set up QEMU
+        if: matrix.arch != 'amd64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Build & test (emulated)
+        if: matrix.arch != 'amd64'
+        run: |
+          docker run --rm \
+            --platform=linux/${{ matrix.arch }} \
+            -v "$PWD:/src" \
+            -w /src \
+            ${{ matrix.image }} \
+            bash -c "
+              apt-get update &&
+              apt-get install -y --no-install-recommends \
+                build-essential cmake &&
+              cmake -S . -B build &&
+              cmake --build build &&
+              ./build/polyseed-tests
+            "
+
+  # ==========
+  # macOS
+  # ==========
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build & test
+        run: |
+          cmake -S . -B build
+          cmake --build build
+          ./build/polyseed-tests
+
+  # ======================
+  # Windows (MSVC + GCC)
+  # ======================
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        compiler: [ msvc, gcc ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # MSVC
+      - name: Configure (MSVC)
+        if: matrix.compiler == 'msvc'
+        run: cmake -S . -B build -G "Visual Studio 18 2026"
+
+      - name: Build (MSVC)
+        if: matrix.compiler == 'msvc'
+        run: cmake --build build --config Release
+
+      - name: Run tests (MSVC)
+        if: matrix.compiler == 'msvc'
+        run: .\build\Release\polyseed-tests.exe
+
+      # GCC (MinGW)
+      - name: Install MinGW
+        if: matrix.compiler == 'gcc'
+        run: choco install mingw -y
+
+      - name: Configure (GCC)
+        if: matrix.compiler == 'gcc'
+        run: cmake -S . -B build -G "MinGW Makefiles"
+
+      - name: Build (GCC)
+        if: matrix.compiler == 'gcc'
+        run: cmake --build build
+
+      - name: Run tests (GCC)
+        if: matrix.compiler == 'gcc'
+        run: .\build\polyseed-tests.exe

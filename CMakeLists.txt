@@ -42,8 +42,8 @@ endif()
 add_library(polyseed SHARED ${polyseed_sources})
 set_property(TARGET polyseed PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET polyseed PROPERTY PUBLIC_HEADER include/polyseed.h)
-include_directories(polyseed
-  include/)
+target_include_directories(polyseed
+  PUBLIC include/)
 target_compile_definitions(polyseed PRIVATE POLYSEED_SHARED)
 set_target_properties(polyseed PROPERTIES VERSION 3.0.0
                                           SOVERSION 3
@@ -52,8 +52,8 @@ set_target_properties(polyseed PROPERTIES VERSION 3.0.0
 
 add_library(polyseed_static STATIC ${polyseed_sources})
 set_property(TARGET polyseed_static PROPERTY POSITION_INDEPENDENT_CODE ON)
-include_directories(polyseed_static
-  include/)
+target_include_directories(polyseed_static
+  PUBLIC include/)
 target_compile_definitions(polyseed_static PUBLIC POLYSEED_STATIC)
 set_target_properties(polyseed_static PROPERTIES OUTPUT_NAME polyseed
                                                  C_STANDARD 11
@@ -61,8 +61,6 @@ set_target_properties(polyseed_static PROPERTIES OUTPUT_NAME polyseed
 
 add_executable(polyseed-tests
   tests/tests.c)
-include_directories(polyseed-tests
-  include/)
 target_compile_definitions(polyseed-tests PRIVATE POLYSEED_STATIC)
 target_link_libraries(polyseed-tests
   PRIVATE polyseed_static)

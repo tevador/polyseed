@@ -88,6 +88,10 @@ static const char* g_phrase_es_mult =
     "impo sort usua cabi venu nobl oliv clim "
     "cont barr marc auto prod vaca torn fati";
 
+static const char* g_phrase_zh_mult =
+    u8"殊 福 女 塞 答 追 看 拌 "
+    u8"招 梯 享 箭 童 血 群 腿";
+
 static const char* g_phrase_garbage1 = "xxx xxx";
 
 static const char* g_phrase_garbage2 =
@@ -122,6 +126,8 @@ static polyseed_str g_phrase_out;
 static const polyseed_lang* g_lang_en;
 static const polyseed_lang* g_lang_es;
 static const polyseed_lang* g_lang_ko;
+static const polyseed_lang* g_lang_zh_s;
+static const polyseed_lang* g_lang_zh_t;
 
 #define RUN_TEST(x) run_test(#x, &x)
 #define RUN_MULT(x) run_multitest(#x, &x)
@@ -720,6 +726,45 @@ static bool test_decode_es_mult2(void) {
     return true;
 }
 
+static bool test_decode_zh_mult1(void) {
+    const polyseed_lang* lang;
+    polyseed_data* seed;
+    polyseed_status res = polyseed_decode(g_phrase_zh_mult, POLYSEED_MONERO, &lang, &seed);
+    assert(res == POLYSEED_OK);
+    polyseed_free(seed);
+    return true;
+}
+
+static bool test_decode_zh_mult2(void) {
+    g_lang_zh_s = get_lang("Chinese (Simplified)");
+    if (g_lang_zh_s == NULL) {
+        return false;
+    }
+    g_lang_zh_t = get_lang("Chinese (Traditional)");
+    if (g_lang_zh_t == NULL) {
+        return false;
+    }
+    polyseed_status res;
+    polyseed_data* seed_s;
+    res = polyseed_decode_explicit(g_phrase_zh_mult, POLYSEED_MONERO, g_lang_zh_s, &seed_s);
+    assert(res == POLYSEED_OK);
+
+    polyseed_data* seed_t;
+    res = polyseed_decode_explicit(g_phrase_zh_mult, POLYSEED_MONERO, g_lang_zh_t, &seed_t);
+    assert(res == POLYSEED_OK);
+
+    polyseed_storage store_s;
+    polyseed_storage store_t;
+    polyseed_store(seed_s, store_s);
+    polyseed_store(seed_t, store_t);
+    assert(0 == memcmp(store_s, store_t, sizeof(polyseed_storage)));
+
+    polyseed_free(seed_s);
+    polyseed_free(seed_t);
+
+    return true;
+}
+
 static bool test_free2(void) {
     polyseed_free(g_seed2);
     return true;
@@ -924,6 +969,8 @@ int main() {
     RUN_TEST(test_decode_es_prefix2);
     RUN_TEST(test_decode_es_mult1);
     RUN_TEST(test_decode_es_mult2);
+    RUN_TEST(test_decode_zh_mult1);
+    RUN_TEST(test_decode_zh_mult2);
     RUN_TEST(test_free2);
     RUN_TEST(test_inject3);
     RUN_TEST(test_features3a);

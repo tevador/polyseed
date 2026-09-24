@@ -92,7 +92,7 @@ typedef enum polyseed_status {
     POLYSEED_ERR_FORMAT = 5,
     /* Memory allocation failure */
     POLYSEED_ERR_MEMORY = 6,
-    /* Phrase matches more than one language */
+    /* Phrase matches multiple languages with different seeds */
     POLYSEED_ERR_MULT_LANG = 7,
 } polyseed_status;
 

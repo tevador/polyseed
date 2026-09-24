@@ -223,6 +223,15 @@ int polyseed_lang_find_word(const polyseed_lang* lang, const char* word) {
     return lang_search(lang, word, cmp);
 }
 
+static bool idx_equal(const uint_fast16_t a[POLYSEED_NUM_WORDS],
+    const uint_fast16_t b[POLYSEED_NUM_WORDS]) {
+    uint_fast16_t diff = 0;
+    for (int wi = 0; wi < POLYSEED_NUM_WORDS; ++wi) {
+        diff |= a[wi] ^ b[wi];
+    }
+    return diff == 0;
+}
+
 polyseed_status polyseed_phrase_decode(const polyseed_phrase phrase,
     uint_fast16_t idx_out[POLYSEED_NUM_WORDS], const polyseed_lang** lang_out) {
     /* Iterate through all languages and try to find just one where
@@ -247,10 +256,14 @@ polyseed_status polyseed_phrase_decode(const polyseed_phrase phrase,
             continue;
         }
         if (have_lang) {
-            /* The phrase can decode in multiple languages.
-            Use polyseed_phrase_decode_explicit. */
-            status = POLYSEED_ERR_MULT_LANG;
-            break;
+            if (!idx_equal(idx, idx_out)) {
+                /* The phrase can decode to different seeds in multiple languages.
+                Use polyseed_phrase_decode_explicit. */
+                status = POLYSEED_ERR_MULT_LANG;
+                break;
+            }
+            /* A different language decodes to the same seed. */
+            continue;
         }
         have_lang = true;
         status = POLYSEED_OK;

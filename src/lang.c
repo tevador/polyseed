@@ -229,6 +229,7 @@ polyseed_status polyseed_phrase_decode(const polyseed_phrase phrase,
        all the words are a match. */
     uint_fast16_t idx[POLYSEED_NUM_WORDS];
     bool have_lang = false;
+    polyseed_status status = POLYSEED_ERR_LANG;
     for (int li = 0; li < NUM_LANGS; ++li) {
         const polyseed_lang* lang = languages[li];
         polyseed_cmp* cmp = get_comparer(lang);
@@ -248,9 +249,11 @@ polyseed_status polyseed_phrase_decode(const polyseed_phrase phrase,
         if (have_lang) {
             /* The phrase can decode in multiple languages.
             Use polyseed_phrase_decode_explicit. */
-            return POLYSEED_ERR_MULT_LANG;
+            status = POLYSEED_ERR_MULT_LANG;
+            break;
         }
         have_lang = true;
+        status = POLYSEED_OK;
         for (int wi = 0; wi < POLYSEED_NUM_WORDS; ++wi) {
             idx_out[wi] = idx[wi];
         }
@@ -258,7 +261,8 @@ polyseed_status polyseed_phrase_decode(const polyseed_phrase phrase,
             *lang_out = lang;
         }
     }
-    return have_lang ? POLYSEED_OK : POLYSEED_ERR_LANG;
+    MEMZERO_LOC(idx);
+    return status;
 }
 
 polyseed_status polyseed_phrase_decode_explicit(const polyseed_phrase phrase,

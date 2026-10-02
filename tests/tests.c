@@ -316,7 +316,7 @@ static void* alloc_fail(size_t n) {
 }
 
 static void check_key(polyseed_data* data, polyseed_coin coin) {
-    char key[TEST_KEYLEN];
+    uint8_t key[TEST_KEYLEN];
     polyseed_keygen(data, coin, TEST_KEYLEN, key);
 }
 

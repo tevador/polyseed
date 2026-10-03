@@ -410,11 +410,11 @@ void polyseed_crypt(polyseed_data* seed, const char* password) {
     /* derive an encryption mask */
     uint8_t mask[32];
 
-    char salt[16] = "POLYSEED mask";
+    uint8_t salt[16] = "POLYSEED mask";
     salt[14] = 0xff;
     salt[15] = 0xff;
 
-    PBKDF2_SHA256(pass_norm, str_size, salt, sizeof(salt),
+    PBKDF2_SHA256((const uint8_t*)pass_norm, str_size, salt, sizeof(salt),
         KDF_NUM_ITERATIONS, mask, sizeof(mask));
 
     /* apply mask */

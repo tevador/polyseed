@@ -23,7 +23,7 @@
 
 POLYSEED_PRIVATE polyseed_dependency polyseed_deps;
 
-static uint64_t stdlib_time() {
+static uint64_t stdlib_time(void) {
     return (uint64_t)time(NULL);
 }
 

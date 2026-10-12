@@ -285,15 +285,15 @@ static size_t u8_nfkd_spaces(const char* str, polyseed_str norm) {
     return i;
 }
 
-static uint64_t time1() {
+static uint64_t time1(void) {
     return SEED_TIME1;
 }
 
-static uint64_t time2() {
+static uint64_t time2(void) {
     return SEED_TIME2;
 }
 
-static uint64_t time3() {
+static uint64_t time3(void) {
     return SEED_TIME3;
 }
 
@@ -932,7 +932,7 @@ static bool test_out_of_memory2(void) {
     return true;
 }
 
-int main() {
+int main(void) {
     RUN_TEST(test_inject1);
     RUN_TEST(test_num_langs);
     RUN_TEST(test_get_lang);

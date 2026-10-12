@@ -84,6 +84,10 @@ static const char* g_phrase_es5 =
     "eje fin part cele tab pest lien puma "
     "pris hora rega leng exis lapi lote sono";
 
+static const char* g_phrase_es6 =
+    u8"eje fin part céle tabú pestañ lien puma "
+    u8"prisió hora rega leng exis lápi lote sono";
+
 static const char* g_phrase_es_mult =
     "impo sort usua cabi venu nobl oliv clim "
     "cont barr marc auto prod vaca torn fati";
@@ -707,6 +711,20 @@ static bool test_decode_es_prefix2(void) {
     return true;
 }
 
+static bool test_decode_es_prefix3(void) {
+    if (g_lang_es == NULL) {
+        return false;
+    }
+    const polyseed_lang* lang;
+    polyseed_data* seed;
+    polyseed_status res = polyseed_decode(g_phrase_es6, POLYSEED_MONERO, &lang, &seed);
+    assert(res == POLYSEED_OK);
+    assert(lang == g_lang_es);
+    check_key(seed, POLYSEED_MONERO);
+    polyseed_free(seed);
+    return true;
+}
+
 static bool test_decode_es_mult1(void) {
     const polyseed_lang* lang;
     polyseed_data* seed;
@@ -967,6 +985,7 @@ int main() {
     RUN_TEST(test_decode_es_prefix1);
     RUN_TEST(test_decode_es_suffix);
     RUN_TEST(test_decode_es_prefix2);
+    RUN_TEST(test_decode_es_prefix3);
     RUN_TEST(test_decode_es_mult1);
     RUN_TEST(test_decode_es_mult2);
     RUN_TEST(test_decode_zh_mult1);

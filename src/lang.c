@@ -175,7 +175,11 @@ static int compare_prefix_noaccent(const char* key, const char* elm, int n) {
         if (*k == '\0') {
             break;
         }
-        if (i >= n && k[1] == '\0') {
+        const unsigned char* next = k + 1;
+        while (*next >= 0x80) { /* skip non-ASCII */
+            ++next;
+        }
+        if (i >= n && *next == '\0') {
             break;
         }
         if (*k != *e) {

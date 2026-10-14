@@ -76,7 +76,7 @@ polyseed_status polyseed_create(unsigned features, polyseed_data** seed_out) {
         return POLYSEED_ERR_UNSUPPORTED;
     }
 
-    /* alocate memory */
+    /* allocate memory */
     polyseed_data* seed = ALLOC(sizeof(polyseed_data));
     if (seed == NULL) {
         return POLYSEED_ERR_MEMORY;
@@ -187,7 +187,7 @@ polyseed_status polyseed_decode(const char* str, polyseed_coin coin,
     polyseed_status res;
     polyseed_data* seed;
 
-    /* canonical decomposition */
+    /* compatibility decomposition */
     size_t str_size = UTF8_DECOMPOSE(str, str_tmp);
     assert(str_size < POLYSEED_STR_SIZE);
 
@@ -213,7 +213,7 @@ polyseed_status polyseed_decode(const char* str, polyseed_coin coin,
         goto cleanup;
     }
 
-    /* alocate memory */
+    /* allocate memory */
     seed = ALLOC(sizeof(polyseed_data));
 
     if (seed == NULL) {
@@ -256,7 +256,7 @@ polyseed_status polyseed_decode_explicit(const char* str, polyseed_coin coin,
     polyseed_status res;
     polyseed_data* seed;
 
-    /* canonical decomposition */
+    /* compatibility decomposition */
     size_t str_size = UTF8_DECOMPOSE(str, str_tmp);
     assert(str_size < POLYSEED_STR_SIZE);
 
@@ -282,7 +282,7 @@ polyseed_status polyseed_decode_explicit(const char* str, polyseed_coin coin,
         goto cleanup;
     }
 
-    /* alocate memory */
+    /* allocate memory */
     seed = ALLOC(sizeof(polyseed_data));
 
     if (seed == NULL) {
@@ -357,7 +357,7 @@ polyseed_status polyseed_load(const polyseed_storage storage,
     polyseed_status res;
     polyseed_data* seed;
 
-    /* alocate memory */
+    /* allocate memory */
     seed = ALLOC(sizeof(polyseed_data));
 
     if (seed == NULL) {

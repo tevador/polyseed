@@ -29,13 +29,18 @@
 /* The serialized seed. The contents are platform-independent. */
 typedef uint8_t polyseed_storage[POLYSEED_SIZE];
 
-/* The maximum possible length of a mnemonic phrase */
+/* The maximum size of a mnemonic phrase, including the terminating null */
 #define POLYSEED_STR_SIZE 576
 
 /* Mnemonic phrase buffer */
 typedef char polyseed_str[POLYSEED_STR_SIZE];
 
-/* Dependency injection definitions */
+/*
+ * Dependency injection definitions
+ *
+ * randbytes, pbkdf2_sha256, u8_nfc and u8_nfkd must not return if they fail.
+ * u8_nfc and u8_nfkd must store a C-style string in norm and return its length.
+ */
 typedef void polyseed_randbytes(void* result, size_t n);
 typedef void polyseed_pbkdf2(const uint8_t* pw, size_t pwlen,
     const uint8_t* salt, size_t saltlen, uint64_t iterations,
@@ -53,9 +58,9 @@ typedef struct polyseed_dependency {
     polyseed_pbkdf2* pbkdf2_sha256;
     /* Function to securely erase memory */
     polyseed_memzero* memzero;
-    /* Function to convert a UTF8 string to the composed canonical form. */
+    /* Function to convert a UTF8 string to Normalization Form C (NFC). */
     polyseed_transform* u8_nfc;
-    /* Function to convert a UTF8 string to the decomposed canonical form. */
+    /* Function to convert a UTF8 string to Normalization Form KD (NFKD). */
     polyseed_transform* u8_nfkd;
     /* OPTIONAL: Function to get the current unix time  */
     polyseed_time* time;
@@ -217,6 +222,7 @@ polyseed_status polyseed_create(unsigned features, polyseed_data** seed_out);
  * functions:
  *  - polyseed_create
  *  - polyseed_decode
+ *  - polyseed_decode_explicit
  *  - polyseed_load
  *
  * @param seed is the pointer to be freed. If NULL, no action is performed.
@@ -250,7 +256,7 @@ unsigned polyseed_get_feature(const polyseed_data* seed, unsigned mask);
  *
  * @param seed is a pointer to the seed data. Must not be NULL.
  * @param coin is the coin the secret key is intended for.
- * $param key_size is the required key size.
+ * @param key_size is the required key size.
  * @param key_out is the buffer where the secret key will be stored.
  *        Must not be NULL.
 */
@@ -279,7 +285,7 @@ size_t polyseed_encode(const polyseed_data* seed, const polyseed_lang* lang,
  *
  * @param str is the mnemonic phrase as a C-style string. Must not be NULL.
  * @param coin is the coin the mnemonic phrase is intended for.
- * @param lang_out is an optional pointer. IF not NULL, the detected language
+ * @param lang_out is an optional pointer. If not NULL, the detected language
  *        of the mnemonic phrase will be stored there.
  * @param seed_out is a pointer where the seed pointer will be stored.
  *        Must not be NULL.
@@ -344,9 +350,9 @@ POLYSEED_API
 void polyseed_crypt(polyseed_data* seed, const char* password);
 
 /**
- * Determine if the seed contents are encrypted. The seed is considered
+ * Determines if the seed contents are encrypted. The seed is considered
  * encrypted if the polyseed_crypt function has been applied to it
- * odd-number of times.
+ * an odd number of times.
  *
  * @param seed is the pointer to the seed data. Must not be NULL.
  *

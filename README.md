@@ -21,7 +21,7 @@ Supported languages:
 10. Chinese (Traditional)
 
 
-For languages based on the latin alphabet, just the first 4 characters of each word need to be provided when restoring a seed. French and Spanish seeds can be input with or without accents. Wordlists are based on [BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039/bip-0039-wordlists.md) with a few minor changes.
+For languages based on the latin alphabet, just the first 4 characters of each word need to be provided when restoring a seed. French and Spanish seeds can be input with or without accents. Wordlists are based on [BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039/bip-0039-wordlists.md) with a different word order for Czech, Spanish and Japanese.
 
 ## Encoding
 
@@ -85,10 +85,10 @@ Polyseed uses dependency injection. The following 5 functions must be provided b
 | dependency | description | implemented in |
 |------------|-------------|----------------|
 | randbytes  | Function to generate cryptographically secure random bytes | [libsodium](https://github.com/jedisct1/libsodium), [OpenSSL](https://github.com/openssl/openssl) |
-| pbkdf2_sha256 | Function to calculate PBKDF2 based on HMAC-SHA256 | [libsodium](https://github.com/jedisct1/libsodium), [OpenSSL](https://github.com/openssl/openssl) |
+| pbkdf2_sha256 | Function to calculate PBKDF2 based on HMAC-SHA256 | [OpenSSL](https://github.com/openssl/openssl) |
 | memzero | Function to securely erase memory | [libsodium](https://github.com/jedisct1/libsodium), [OpenSSL](https://github.com/openssl/openssl) |
-| u8_nfc | Function to convert a UTF8 string to the composed canonical form. | [Boost.Locale](https://www.boost.org/doc/libs/1_77_0/libs/locale/doc/html/), [utf8proc](https://github.com/JuliaStrings/utf8proc) |
-| u8_nfkd | Function to convert a UTF8 string to the decomposed canonical form. | [Boost.Locale](https://www.boost.org/doc/libs/1_77_0/libs/locale/doc/html/), [utf8proc](https://github.com/JuliaStrings/utf8proc) |
+| u8_nfc | Function to convert a UTF8 string to Normalization Form C (NFC). | [Boost.Locale](https://www.boost.org/doc/libs/1_77_0/libs/locale/doc/html/), [utf8proc](https://github.com/JuliaStrings/utf8proc) |
+| u8_nfkd | Function to convert a UTF8 string to Normalization Form KD (NFKD). | [Boost.Locale](https://www.boost.org/doc/libs/1_77_0/libs/locale/doc/html/), [utf8proc](https://github.com/JuliaStrings/utf8proc) |
 
 These functions are implemented in widely used and tested libraries and it would be out of the scope of this library to implement them. It also reduces the security risks (polyseed doesn't contain any cryptographic code). The [polyseed-examples](https://github.com/tevador/polyseed-examples) repository contains examples how to inject the dependencies for C, C++ and C# projects.
 
@@ -98,7 +98,7 @@ Additional 3 functions are optional dependencies. If they are not provided (the 
 |------------|-------------|----------------|
 | time  | Function to get the current unix time | `uint64_t time(void);` |
 | alloc | Function to allocate memory | `void* malloc(size_t size);` |
-| free | Function to free memory | `void free(void* ptr)` |
+| free | Function to free memory | `void free(void* ptr);` |
 
 These are mostly needed for testing purposes, but can be also used to provide a custom memory allocator.
 
